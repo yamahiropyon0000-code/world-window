@@ -1,331 +1,540 @@
-<html lang="en" translate="no">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta http-equiv="Content-Language" content="en">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>World Window</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { height: 100vh; }
   body {
     background: #0a0a1a;
     color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
+
+  /* Header */
   header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px;
-    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding: 12px 20px;
     background: rgba(255,255,255,0.05);
-    position: relative;
-    z-index: 100;
-    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    z-index: 10;
   }
-  .app-title { font-size: 18px; font-weight: 600; }
-  .mode-tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 3px; }
+  header div[translate="no"] {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .app-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 3px;
+  }
   .mode-tab {
-    padding: 8px 18px; border-radius: 6px; border: none;
-    background: transparent; color: #999; font-size: 14px;
-    font-weight: 500; cursor: pointer;
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #999;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
   }
-  .mode-tab.active { background: rgba(255,255,255,0.15); color: #fff; }
+  .mode-tab.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
 
+  /* Main content */
   .content {
-    flex: 1; position: relative; overflow: hidden; z-index: 1;
-    display: flex; align-items: center; justify-content: center;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
   }
 
-  .camera-view {
-    width: 100%; height: 100%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: #000; position: relative;
+  /* Camera mode */
+  .camera-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
   }
-  .camera-view iframe {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; border: none;
-    pointer-events: none;
+  .camera-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
   }
-  .camera-info {
-    position: relative; z-index: 10;
-    background: rgba(0,0,0,0.7); color: #fff;
-    padding: 12px 24px; border-radius: 8px;
-    font-size: 20px; text-align: center;
+  .camera-offline {
+    text-align: center;
+    color: #666;
+    font-size: 16px;
   }
 
+  /* News mode */
   .news-container {
-    width: 100%; height: 100%;
-    display: flex; flex-direction: column;
-    padding: 24px; padding-bottom: 80px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
     overflow-y: auto;
   }
-  .news-source { font-size: 32px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
-  .news-title { font-size: 64px; font-weight: 700; line-height: 1.35; margin-bottom: 16px; color: #fff; }
-  .news-description { font-size: 44px; line-height: 1.6; color: #bbb; margin-bottom: 20px; }
-  .news-meta { font-size: 32px; color: #666; }
-  .news-link { display: inline-block; margin-top: 16px; color: #5ba8f5; text-decoration: none; font-size: 36px; }
+  .news-source {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .news-country-flag {
+    font-size: 20px;
+    margin-right: 6px;
+  }
+  .news-title {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .news-description {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #bbb;
+    margin-bottom: 16px;
+  }
+  .news-meta {
+    font-size: 12px;
+    color: #666;
+  }
+  .news-link {
+    display: inline-block;
+    margin-top: 16px;
+    color: #5ba8f5;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .news-divider {
+    width: 40px;
+    height: 2px;
+    background: rgba(255,255,255,0.1);
+    margin: 20px 0;
+  }
 
+  /* Footer */
   footer {
-    padding: 12px 20px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 20px 14px;
     background: rgba(255,255,255,0.05);
-    position: relative;
-    z-index: 100;
-    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    z-index: 10;
   }
-  .location-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; min-height: 28px; }
-  .location-name { font-size: 18px; font-weight: 600; }
-  .location-time { font-size: 16px; color: #888; }
-  .progress-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, #5ba8f5, #a78bfa); border-radius: 2px; transition: width 1s linear; }
-  .controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .location-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    min-height: 24px;
+  }
+  .location-name {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .location-time {
+    font-size: 14px;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5ba8f5, #a78bfa);
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
   .ctrl-btn {
-    background: rgba(255,255,255,0.08); border: none; color: #ccc;
-    height: 40px; border-radius: 20px; font-size: 15px;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; padding: 0 20px; gap: 6px;
-    -webkit-tap-highlight-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: #ccc;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
   }
-  .ctrl-btn:active { background: rgba(255,255,255,0.2); }
-  .ctrl-btn.round { width: 40px; padding: 0; }
+  .ctrl-btn:active {
+    background: rgba(255,255,255,0.2);
+  }
 
-  .version-tag {
-    position: fixed; top: 50px; right: 10px;
-    background: red; color: white; padding: 4px 10px;
-    font-size: 14px; font-weight: bold; border-radius: 4px;
-    z-index: 9999;
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #555;
+    font-size: 16px;
+  }
+  .loading-dot {
+    animation: blink 1.4s infinite both;
+  }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; }
+    40% { opacity: 1; }
+  }
+
+  /* Fade transition */
+  .fade-enter {
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
 <body>
 
-<div class="version-tag">V8</div>
-
-<header>
-  <div><span class="app-title">World Window</span></div>
+<header translate="no">
+  <div>
+    <span class="app-title">World Window</span>
+  </div>
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabCamera" onclick="switchMode('camera')">Camera</button>
-    <button class="mode-tab" id="tabNews" onclick="switchMode('news')">News</button>
+    <button class="mode-tab active" data-mode="camera" onclick="switchMode('camera')">Camera</button>
+    <button class="mode-tab" data-mode="news" onclick="switchMode('news')">News</button>
   </div>
 </header>
 
 <div class="content" id="content">
-  <div style="color:#555;font-size:20px;">Loading...</div>
+  <!-- Dynamic content here -->
 </div>
 
-<footer>
+<footer translate="no">
   <div class="location-info">
-    <span class="location-name" id="locationName">Starting...</span>
+    <span class="location-name" id="locationName">Loading...</span>
     <span class="location-time" id="locationTime"></span>
   </div>
   <div class="progress-bar">
     <div class="progress-fill" id="progressFill" style="width: 0%"></div>
   </div>
   <div class="controls">
-    <button class="ctrl-btn" onclick="goPrev()">Prev</button>
-    <button class="ctrl-btn round" id="pauseBtn" onclick="togglePause()">||</button>
-    <button class="ctrl-btn" onclick="goNext()">Next</button>
+    <button class="ctrl-btn" onclick="goPrev()" aria-label="Previous">&#9664;</button>
+    <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()" aria-label="Pause">&#10074;&#10074;</button>
+    <button class="ctrl-btn" onclick="goNext()" aria-label="Next">&#9654;</button>
   </div>
 </footer>
 
 <script>
-var cameras = [
-  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCgdHxnHSXvcAi4PaMIY1Ltg" },
-  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCMxNcaFBLSXEhAIZKMDXbCw" },
-  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UC8bRCo7lGBfPsfzmIJ4bm9A" },
-  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "KR", vid: "live_stream?channel=UCQ2O-08tY-GeWaSxxjEKNMQ" },
-  { city: "Busan, Korea", tz: "Asia/Seoul", flag: "KR", vid: "bSkAqlbkjKs" },
-  { city: "Bangkok", tz: "Asia/Bangkok", flag: "TH", vid: "RRzgtJBueMk" },
-  { city: "Singapore", tz: "Asia/Singapore", flag: "SG", vid: "M0g5HdRmFCQ" },
-  { city: "Dubai", tz: "Asia/Dubai", flag: "AE", vid: "5WfiTHiU6FI" },
-  { city: "London", tz: "Europe/London", flag: "GB", vid: "Zaem36S0UJQ" },
-  { city: "Paris", tz: "Europe/Paris", flag: "FR", vid: "cXkFOYOlAzE" },
-  { city: "Rome", tz: "Europe/Rome", flag: "IT", vid: "L6aCnVIePJE" },
-  { city: "Amsterdam", tz: "Europe/Amsterdam", flag: "NL", vid: "1Hs0dGRBEMo" },
-  { city: "Prague", tz: "Europe/Prague", flag: "CZ", vid: "GQzTVAiMhoI" },
-  { city: "Istanbul", tz: "Europe/Istanbul", flag: "TR", vid: "x6x6GnXrXhg" },
-  { city: "New York", tz: "America/New_York", flag: "US", vid: "live_stream?channel=UC6qrG3W8SMK0jior2olka3g" },
-  { city: "Miami Beach", tz: "America/New_York", flag: "US", vid: "VHW_sF3BKFI" },
-  { city: "Los Angeles", tz: "America/Los_Angeles", flag: "US", vid: "vCadcBR95oU" },
-  { city: "Havana", tz: "America/Havana", flag: "CU", vid: "jPOdsautHbo" },
-  { city: "Buenos Aires", tz: "America/Argentina/Buenos_Aires", flag: "AR", vid: "4EGhElaZeXk" },
-  { city: "Sydney", tz: "Australia/Sydney", flag: "AU", vid: "Y2gTSjoEExc" },
-  { city: "Taipei", tz: "Asia/Taipei", flag: "TW", vid: "Q8SMl0bAOqo" }
+// ========== DATA ==========
+
+const cameras = [
+  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "DjdUEyjx8GM" },
+  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "n8V3kJBn_Es" },
+  { city: "Kabukicho, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "gFRtAAmiFbE" },
+  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "🇰🇷", videoId: "gO0bsPClMBc" },
+  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "🇹🇭", videoId: "RRzgtJBueMk" },
+  { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "🇦🇪", videoId: "5WfiTHiU6FI" },
+  { city: "London, UK", tz: "Europe/London", flag: "🇬🇧", videoId: "Zaem36S0UJQ" },
+  { city: "Paris, France", tz: "Europe/Paris", flag: "🇫🇷", videoId: "cXkFOYOlAzE" },
+  { city: "Rome, Italy", tz: "Europe/Rome", flag: "🇮🇹", videoId: "L6aCnVIePJE" },
+  { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "🇳🇱", videoId: "1Hs0dGRBEMo" },
+  { city: "New York, USA", tz: "America/New_York", flag: "🇺🇸", videoId: "1-iS7LArMPA" },
+  { city: "Miami Beach, USA", tz: "America/New_York", flag: "🇺🇸", videoId: "VHW_sF3BKFI" },
+  { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "🇺🇸", videoId: "vCadcBR95oU" },
+  { city: "Havana, Cuba", tz: "America/Havana", flag: "🇨🇺", videoId: "jPOdsautHbo" },
+  { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "🇦🇺", videoId: "Y2gTSjoEExc" },
+  { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "🇹🇼", videoId: "Q8SMl0bAOqo" },
+  { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "🇹🇷", videoId: "x6x6GnXrXhg" },
+  { city: "Prague, Czech", tz: "Europe/Prague", flag: "🇨🇿", videoId: "GQzTVAiMhoI" },
+  { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "🇦🇷", videoId: "4EGhElaZeXk" },
+  { city: "Singapore", tz: "Asia/Singapore", flag: "🇸🇬", videoId: "M0g5HdRmFCQ" },
 ];
 
-var newsFeeds = [
-  { name: "BBC News", country: "UK", flag: "GB", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
-  { name: "Reuters", country: "Intl", flag: "INTL", url: "<https://feeds.reuters.com/reuters/worldNews>" },
-  { name: "Al Jazeera", country: "Qatar", flag: "QA", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
-  { name: "DW News", country: "Germany", flag: "DE", url: "<https://rss.dw.com/rdf/rss-en-world>" },
-  { name: "France24", country: "France", flag: "FR", url: "<https://www.france24.com/en/rss>" },
-  { name: "NHK World", country: "Japan", flag: "JP", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
-  { name: "The Guardian", country: "UK", flag: "GB", url: "<https://www.theguardian.com/world/rss>" }
+const newsFeeds = [
+  { name: "BBC News", country: "UK", flag: "🇬🇧", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
+  { name: "Reuters", country: "International", flag: "🌍", url: "<https://feeds.reuters.com/reuters/worldNews>" },
+  { name: "Al Jazeera", country: "Qatar", flag: "🇶🇦", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
+  { name: "DW News", country: "Germany", flag: "🇩🇪", url: "<https://rss.dw.com/rdf/rss-en-world>" },
+  { name: "France24", country: "France", flag: "🇫🇷", url: "<https://www.france24.com/en/rss>" },
+  { name: "NHK World", country: "Japan", flag: "🇯🇵", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
+  { name: "ABC News (AU)", country: "Australia", flag: "🇦🇺", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
+  { name: "NDTV", country: "India", flag: "🇮🇳", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
+  { name: "CNA", country: "Singapore", flag: "🇸🇬", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
+  { name: "The Guardian", country: "UK", flag: "🇬🇧", url: "<https://www.theguardian.com/world/rss>" },
 ];
 
-var currentMode = "camera";
-var currentIndex = 0;
-var isPaused = false;
-var progressPercent = 0;
-var shuffledCameras = [];
-var cachedNews = [];
-var newsIndex = 0;
-var CAMERA_INTERVAL = 45;
-var NEWS_INTERVAL = 20;
+// ========== STATE ==========
+
+let currentMode = 'camera';
+let currentIndex = 0;
+let isPaused = false;
+let intervalId = null;
+let progressIntervalId = null;
+let progressPercent = 0;
+let shuffledCameras = [];
+let cachedNews = [];
+let newsIndex = 0;
+
+const CAMERA_INTERVAL = 45; // seconds
+const NEWS_INTERVAL = 20;   // seconds
+
+// ========== SHUFFLE ==========
 
 function shuffle(arr) {
-  var a = arr.slice();
-  for (var i = a.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
+
+// ========== CAMERA MODE ==========
 
 function showCamera() {
   if (shuffledCameras.length === 0) {
     shuffledCameras = shuffle(cameras);
     currentIndex = 0;
   }
-  var cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  var sep = cam.vid.indexOf("?") >= 0 ? "&" : "?";
-  var src = "<https://www.youtube.com/embed/>" + cam.vid + sep + "autoplay=1&mute=1&controls=0&playsinline=1";
+  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
+  const content = document.getElementById('content');
 
-  document.getElementById("content").innerHTML =
-    '<div class="camera-view">' +
-      '<iframe src="' + src + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>' +
-      '<div class="camera-info">' + cam.flag + " " + cam.city + '</div>' +
-    '</div>';
+  content.innerHTML = `
+    <div class="camera-container fade-enter">
+      <iframe
+        src="<https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1>"
+        allow="autoplay; encrypted-media"
+        allowfullscreen>
+      </iframe>
+    </div>
+  `;
 
-  document.getElementById("locationName").textContent = cam.flag + " " + cam.city;
+  document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
   updateTime(cam.tz);
 }
 
 function updateTime(tz) {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  document.getElementById('locationTime').textContent = timeStr;
+}
+
+// ========== NEWS MODE ==========
+
+const RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
+
+async function fetchRandomNews() {
+  const feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
+
   try {
-    document.getElementById("locationTime").textContent =
-      new Date().toLocaleTimeString("en-US", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
-  } catch(e) {}
+    const resp = await fetch(RSS_PROXY + encodeURIComponent(feed.url));
+    const data = await resp.json();
+
+    if (data.status === 'ok' && data.items && data.items.length > 0) {
+      const items = data.items.map(item => ({
+        ...item,
+        feedName: feed.name,
+        feedCountry: feed.country,
+        feedFlag: feed.flag,
+      }));
+      // Pick random articles from this feed
+      const shuffled = shuffle(items);
+      return shuffled.slice(0, 5);
+    }
+  } catch (e) {
+    console.warn('Feed fetch failed:', feed.name, e);
+  }
+  return [];
 }
 
-var RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
+async function loadNewsPool() {
+  document.getElementById('content').innerHTML = `
+    <div class="loading">
+      <span class="loading-dot">.</span>
+      <span class="loading-dot">.</span>
+      <span class="loading-dot">.</span>
+    </div>
+  `;
+  document.getElementById('locationName').textContent = 'Loading news...';
+  document.getElementById('locationTime').textContent = '';
 
-function fetchNews() {
-  var feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
-  return fetch(RSS_PROXY + encodeURIComponent(feed.url))
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.status === "ok" && data.items && data.items.length > 0) {
-        return data.items.map(function(item) {
-          item.feedName = feed.name;
-          item.feedCountry = feed.country;
-          item.feedFlag = feed.flag;
-          return item;
-        });
-      }
-      return [];
-    })
-    .catch(function() { return []; });
+  // Fetch from 3 random feeds in parallel
+  const promises = [fetchRandomNews(), fetchRandomNews(), fetchRandomNews()];
+  const results = await Promise.all(promises);
+  cachedNews = results.flat();
+  cachedNews = shuffle(cachedNews);
+  newsIndex = 0;
+
+  if (cachedNews.length > 0) {
+    showNewsItem();
+  } else {
+    document.getElementById('content').innerHTML = `
+      <div class="loading">Could not load news. Try again.</div>
+    `;
+  }
 }
 
-function loadNews() {
-  document.getElementById("content").innerHTML = '<div style="color:#555;font-size:20px;">Loading news...</div>';
-  document.getElementById("locationName").textContent = "Loading...";
+function showNewsItem() {
+  if (cachedNews.length === 0) {
+    loadNewsPool();
+    return;
+  }
 
-  Promise.all([fetchNews(), fetchNews(), fetchNews()])
-    .then(function(results) {
-      cachedNews = shuffle(results[0].concat(results[1]).concat(results[2]));
-      newsIndex = 0;
-      if (cachedNews.length > 0) { showNews(); }
-      else { document.getElementById("content").innerHTML = '<div style="color:#555;font-size:20px;">No news found.</div>'; }
-    });
+  const item = cachedNews[newsIndex % cachedNews.length];
+  const content = document.getElementById('content');
+
+  // Strip HTML tags from description
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = item.description || '';
+  const cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
+  const truncatedDesc = cleanDesc.length > 300 ? cleanDesc.substring(0, 300) + '...' : cleanDesc;
+
+  const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
+  }) : '';
+
+  content.innerHTML = `
+    <div class="news-container fade-enter">
+      <div class="news-source">${item.feedFlag} ${item.feedName} — ${item.feedCountry}</div>
+      <div class="news-divider"></div>
+      <h1 class="news-title">${item.title}</h1>
+      <p class="news-description">${truncatedDesc}</p>
+      <div class="news-meta">${pubDate}</div>
+      <a class="news-link" href="${<item.link>}" target="_blank" rel="noopener">Read full article →</a>
+    </div>
+  `;
+
+  document.getElementById('locationName').textContent =
+    `${item.feedFlag} ${item.feedName}`;
+  document.getElementById('locationTime').textContent = pubDate;
 }
 
-function showNews() {
-  if (cachedNews.length === 0) { loadNews(); return; }
-  var item = cachedNews[newsIndex % cachedNews.length];
-
-  var d = document.createElement("div");
-  d.innerHTML = item.description || "";
-  var desc = d.textContent || "";
-  if (desc.length > 300) desc = desc.substring(0, 300) + "...";
-
-  var date = "";
-  try { if (item.pubDate) date = new Date(item.pubDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch(e) {}
-
-  document.getElementById("content").innerHTML =
-    '<div class="news-container">' +
-      '<div class="news-source">' + item.feedFlag + " " + item.feedName + " - " + item.feedCountry + '</div>' +
-      '<h1 class="news-title">' + item.title + '</h1>' +
-      '<p class="news-description">' + desc + '</p>' +
-      '<div class="news-meta">' + date + '</div>' +
-      '<a class="news-link" href="' + <item.link> + '" target="_blank">Read more</a>' +
-    '</div>';
-
-  document.getElementById("locationName").textContent = item.feedFlag + " " + item.feedName;
-  document.getElementById("locationTime").textContent = date;
-}
+// ========== NAVIGATION ==========
 
 function goNext() {
-  if (currentMode === "camera") {
+  if (currentMode === 'camera') {
     currentIndex = (currentIndex + 1) % shuffledCameras.length;
     showCamera();
   } else {
     newsIndex++;
-    if (newsIndex >= cachedNews.length) { loadNews(); return; }
-    showNews();
+    if (newsIndex >= cachedNews.length) {
+      loadNewsPool();
+      return;
+    }
+    showNewsItem();
   }
   resetProgress();
 }
 
 function goPrev() {
-  if (currentMode === "camera") {
+  if (currentMode === 'camera') {
     currentIndex = (currentIndex - 1 + shuffledCameras.length) % shuffledCameras.length;
     showCamera();
   } else {
     newsIndex = Math.max(0, newsIndex - 1);
-    showNews();
+    showNewsItem();
   }
   resetProgress();
 }
 
 function togglePause() {
   isPaused = !isPaused;
-  document.getElementById("pauseBtn").textContent = isPaused ? ">" : "||";
+  document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
 }
+
+// ========== MODE SWITCH ==========
 
 function switchMode(mode) {
   currentMode = mode;
-  document.getElementById("tabCamera").className = mode === "camera" ? "mode-tab active" : "mode-tab";
-  document.getElementById("tabNews").className = mode === "news" ? "mode-tab active" : "mode-tab";
-  if (mode === "camera") { showCamera(); } else { loadNews(); }
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.mode === mode);
+  });
+
+  if (mode === 'camera') {
+    showCamera();
+  } else {
+    loadNewsPool();
+  }
   resetProgress();
+}
+
+// ========== PROGRESS & AUTO-ADVANCE ==========
+
+function getInterval() {
+  return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
 }
 
 function resetProgress() {
   progressPercent = 0;
-  document.getElementById("progressFill").style.width = "0%";
+  document.getElementById('progressFill').style.width = '0%';
 }
 
-setInterval(function() {
-  if (isPaused) return;
-  progressPercent += 100 / (currentMode === "camera" ? CAMERA_INTERVAL : NEWS_INTERVAL);
-  document.getElementById("progressFill").style.width = Math.min(progressPercent, 100) + "%";
-  if (progressPercent >= 100) goNext();
-  if (currentMode === "camera" && shuffledCameras.length > 0) {
-    updateTime(shuffledCameras[currentIndex % shuffledCameras.length].tz);
-  }
-}, 1000);
+function startTicker() {
+  setInterval(() => {
+    if (isPaused) return;
+
+    progressPercent += (100 / getInterval());
+    document.getElementById('progressFill').style.width =
+      Math.min(progressPercent, 100) + '%';
+
+    if (progressPercent >= 100) {
+      goNext();
+    }
+
+    // Update clock for camera mode
+    if (currentMode === 'camera' && shuffledCameras.length > 0) {
+      const cam = shuffledCameras[currentIndex % shuffledCameras.length];
+      updateTime(cam.tz);
+    }
+  }, 1000);
+}
+
+// ========== INIT ==========
 
 shuffledCameras = shuffle(cameras);
 showCamera();
+startTicker();
+
 </script>
 </body>
 </html>
