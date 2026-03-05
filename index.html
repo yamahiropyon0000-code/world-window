@@ -3,12 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.25</title>
+<title>World Window Pro ver 2.26</title>
 <style>
-  /* 基本設定：赤を一切使わず、漆黒で統一 */
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #000; /* 完全な黒 */
+  /* 徹底的な黒の固定：赤色は一切含みません */
+  * { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    background-color: transparent; /* 基本は透明 */
+  }
+  
+  html, body {
+    background-color: #000000 !important; /* 強制的に純粋な黒 */
     color: #e0e0e0;
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
@@ -17,48 +21,49 @@
   /* 開始オーバーレイ */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background-color: #000000 !important;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     z-index: 1000; cursor: pointer;
   }
   .start-btn {
-    padding: 22px 60px; background: #5ba8f5; color: #fff;
+    padding: 22px 60px; background-color: #5ba8f5 !important; color: #ffffff !important;
     border-radius: 50px; font-size: 24px; font-weight: 800; border: none;
     box-shadow: 0 0 40px rgba(91, 168, 245, 0.2);
   }
 
-  header, footer { position: relative; z-index: 100; flex-shrink: 0; background: #0a0a0a; }
+  header, footer { position: relative; z-index: 100; flex-shrink: 0; background-color: #0a0a0a !important; }
   header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 15px 25px; border-bottom: 1px solid #1a1a1a;
   }
-  .app-title { font-size: 20px; font-weight: 700; color: #fff; }
-  .mode-tabs { display: flex; gap: 6px; background: #222; border-radius: 10px; padding: 3px; }
+  .app-title { font-size: 20px; font-weight: 700; color: #ffffff; }
+  .mode-tabs { display: flex; gap: 6px; background-color: #222222 !important; border-radius: 10px; padding: 3px; }
   .mode-tab {
-    padding: 8px 18px; border-radius: 7px; border: none; background: transparent;
-    color: #888; font-size: 14px; font-weight: 600; cursor: pointer;
+    padding: 8px 18px; border-radius: 7px; border: none;
+    color: #888888; font-size: 14px; font-weight: 600; cursor: pointer;
   }
-  .mode-tab.active { background: #fff; color: #000; }
+  .mode-tab.active { background-color: #ffffff !important; color: #000000 !important; }
 
-  /* メイン：常に黒背景を維持 */
+  /* メインコンテンツ：ここも強制的に黒 */
   .content { 
     flex: 1; position: relative; overflow: hidden;
-    background-color: #000;
-    background-size: cover; background-position: center;
+    background-color: #000000 !important;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
     display: flex; align-items: center; justify-content: center;
   }
 
-  #loader { position: absolute; bottom: 20px; right: 20px; font-size: 14px; color: #444; display: none; }
+  #loader { position: absolute; bottom: 20px; right: 20px; font-size: 14px; color: #444444; display: none; }
 
   /* ニュースコンテナ */
   .news-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; display: none; flex-direction: column;
+    background-color: #000000 !important; display: none; flex-direction: column;
     padding: 60px 40px; justify-content: center; z-index: 20;
   }
-  .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; }
+  .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #ffffff; }
   .news-link { 
-    display: inline-block; margin-top: 30px; color: #5ba8f5; 
-    text-decoration: none; font-size: 20px; font-weight: 600; 
+    display: inline-block; margin-top: 30px; color: #5ba8f5 !important; 
+    text-decoration: none; font-size: 22px; font-weight: 600; 
     border-bottom: 2px solid #5ba8f5; padding-bottom: 4px;
     align-self: flex-start;
   }
@@ -67,26 +72,26 @@
     padding: 25px 40px; padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px));
     border-top: 1px solid #1a1a1a;
   }
-  .location-name { font-size: 26px; font-weight: 800; color: #fff; min-height: 1.2em; margin-bottom: 15px; }
+  .location-name { font-size: 26px; font-weight: 800; color: #ffffff; min-height: 1.2em; margin-bottom: 15px; }
   
-  .progress-bar { width: 100%; height: 6px; background: #1a1a1a; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
-  #progressFill { height: 100%; background: #5ba8f5; width: 0%; transition: width 0.1s linear; }
+  .progress-bar { width: 100%; height: 6px; background-color: #1a1a1a !important; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
+  #progressFill { height: 100%; background: #5ba8f5 !important; width: 0%; transition: width 0.1s linear; }
 
   .controls { display: flex; align-items: center; justify-content: center; gap: 50px; }
   .ctrl-btn {
-    background: #222; border: none; color: #fff;
+    background-color: #222222 !important; border: none; color: #ffffff;
     width: 70px; height: 70px; border-radius: 50%; font-size: 28px;
     display: flex; align-items: center; justify-content: center;
   }
-  .ctrl-btn:active { background: #5ba8f5; }
+  .ctrl-btn:active { background-color: #5ba8f5 !important; }
 
-  .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
+  .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333333; }
 </style>
 </head>
 <body>
 
 <div id="startOverlay" onclick="initApp()">
-  <button class="start-btn">TAP TO START TOUR</button>
+  <button class="start-btn">世界を巡る旅を始める</button>
 </div>
 
 <header translate="no">
@@ -110,9 +115,9 @@
   <div class="controls">
     <button class="ctrl-btn" onclick="goPrev()">&#9664;</button>
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
-    <button class="ctrl-btn" style="background:#5ba8f5;" onclick="goNext()">&#9654;</button>
+    <button class="ctrl-btn" style="background-color:#5ba8f5 !important;" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.25</div>
+  <div class="version-tag">ver 2.26</div>
 </footer>
 
 <script>
@@ -140,17 +145,7 @@ const locations = [
   { cityEn: "Santorini", cityJa: "サントリーニ島", countryJa: "ギリシャ" },
   { cityEn: "Swiss Alps", cityJa: "スイス・アルプス", countryJa: "スイス" },
   { cityEn: "Banff", cityJa: "バンフ", countryJa: "カナダ" },
-  { cityEn: "Sydney", cityJa: "シドニー", countryJa: "オーストラリア" },
-  { cityEn: "Hong Kong", cityJa: "香港", countryJa: "中国" },
-  { cityEn: "Florence", cityJa: "フィレンツェ", countryJa: "イタリア" },
-  { cityEn: "Istanbul", cityJa: "イスタンブール", countryJa: "トルコ" },
-  { cityEn: "Rio de Janeiro", cityJa: "リオデジャネイロ", countryJa: "ブラジル" },
-  { cityEn: "Machu Picchu", cityJa: "マチュピチュ", countryJa: "ペルー" },
-  { cityEn: "Hanoi", cityJa: "ハノイ", countryJa: "ベトナム" },
-  { cityEn: "Bali", cityJa: "バリ島", countryJa: "インドネシア" },
-  { cityEn: "Maldives", cityJa: "モルディブ", countryJa: "モルディブ" },
-  { cityEn: "Berlin", cityJa: "ベルリン", countryJa: "ドイツ" },
-  { cityEn: "Copenhagen", cityJa: "コペンハーゲン", countryJa: "デンマーク" }
+  { cityEn: "Sydney", cityJa: "シドニー", countryJa: "オーストラリア" }
 ];
 
 function shuffle(array) {
@@ -174,17 +169,17 @@ function showPhoto() {
   const nameLabel = document.getElementById('locationName');
   const loader = document.getElementById('loader');
 
-  // 【重要】読み込み開始時は画像と文字を完全に消して黒にする
+  // 切り替え時は即座に「真っ黒」にする
   contentArea.style.backgroundImage = 'none';
+  contentArea.style.backgroundColor = '#000000';
   nameLabel.textContent = ''; 
   loader.style.display = 'block';
 
-  const tags = ["architecture", "landscape", "street", "landmark"];
-  const randomTag = tags[Math.floor(Math.random() * tags.length)];
-  const imgUrl = `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.cityEn)},${randomTag}/all?lock=${Date.now()}`;
+  // タグを厳選
+  const imgUrl = `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.cityEn)},landmark/all?lock=${Date.now()}`;
   
   const img = new Image();
-  loadTimeout = setTimeout(() => { goNext(); }, 6000); // タイムアウトは少し長めに
+  loadTimeout = setTimeout(() => { goNext(); }, 6000); 
 
   img.onload = () => {
     clearTimeout(loadTimeout);
@@ -225,10 +220,10 @@ async function loadNews() {
 function showNewsItem() {
   if (!cachedNews.length) return;
   const item = cachedNews[newsIndex % cachedNews.length];
-  // 記事へのリンクを復活
+  // リンクを確実に復活
   document.getElementById('newsContent').innerHTML = `
     <h1 class="news-title">${item.title}</h1>
-    <p style="font-size:24px; line-height:1.6; color:#ccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
+    <p style="font-size:24px; line-height:1.6; color:#cccccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
     <a href="${item.link}" class="news-link" target="_blank">記事を詳しく読む →</a>
   `;
   document.getElementById('locationName').textContent = "世界ニュース速報 (BBC)";
