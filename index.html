@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -184,44 +183,44 @@
 <script>
 // ========== DATA ==========
 var cameras = [
-  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UCgdHxnHSXvcAi4PaMIY1Ltg" },
-  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UCMxNcaFBLSXEhAIZKMDXbCw" },
-  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UC8bRCo7lGBfPsfzmIJ4bm9A" },
-  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", vid: "live_stream?channel=UCQ2O-08tY-GeWaSxxjEKNMQ" },
-  { city: "Busan, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", vid: "bSkAqlbkjKs" },
-  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "\u{1F1F9}\u{1F1ED}", vid: "RRzgtJBueMk" },
-  { city: "Singapore", tz: "Asia/Singapore", flag: "\u{1F1F8}\u{1F1EC}", vid: "M0g5HdRmFCQ" },
-  { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "\u{1F1E6}\u{1F1EA}", vid: "5WfiTHiU6FI" },
-  { city: "London, UK", tz: "Europe/London", flag: "\u{1F1EC}\u{1F1E7}", vid: "Zaem36S0UJQ" },
-  { city: "Paris, France", tz: "Europe/Paris", flag: "\u{1F1EB}\u{1F1F7}", vid: "cXkFOYOlAzE" },
-  { city: "Rome, Italy", tz: "Europe/Rome", flag: "\u{1F1EE}\u{1F1F9}", vid: "L6aCnVIePJE" },
-  { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "\u{1F1F3}\u{1F1F1}", vid: "1Hs0dGRBEMo" },
-  { city: "Prague, Czech", tz: "Europe/Prague", flag: "\u{1F1E8}\u{1F1FF}", vid: "GQzTVAiMhoI" },
-  { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "\u{1F1F9}\u{1F1F7}", vid: "x6x6GnXrXhg" },
-  { city: "New York, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", vid: "live_stream?channel=UC6qrG3W8SMK0jior2olka3g" },
-  { city: "Miami Beach, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", vid: "VHW_sF3BKFI" },
-  { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "\u{1F1FA}\u{1F1F8}", vid: "vCadcBR95oU" },
-  { city: "Havana, Cuba", tz: "America/Havana", flag: "\u{1F1E8}\u{1F1FA}", vid: "jPOdsautHbo" },
-  { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "\u{1F1E6}\u{1F1F7}", vid: "4EGhElaZeXk" },
-  { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "\u{1F1E6}\u{1F1FA}", vid: "Y2gTSjoEExc" },
-  { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "\u{1F1F9}\u{1F1FC}", vid: "Q8SMl0bAOqo" }
+  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCgdHxnHSXvcAi4PaMIY1Ltg" },
+  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCMxNcaFBLSXEhAIZKMDXbCw" },
+  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UC8bRCo7lGBfPsfzmIJ4bm9A" },
+  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "KR", vid: "live_stream?channel=UCQ2O-08tY-GeWaSxxjEKNMQ" },
+  { city: "Busan, Korea", tz: "Asia/Seoul", flag: "KR", vid: "bSkAqlbkjKs" },
+  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "TH", vid: "RRzgtJBueMk" },
+  { city: "Singapore", tz: "Asia/Singapore", flag: "SG", vid: "M0g5HdRmFCQ" },
+  { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "AE", vid: "5WfiTHiU6FI" },
+  { city: "London, UK", tz: "Europe/London", flag: "GB", vid: "Zaem36S0UJQ" },
+  { city: "Paris, France", tz: "Europe/Paris", flag: "FR", vid: "cXkFOYOlAzE" },
+  { city: "Rome, Italy", tz: "Europe/Rome", flag: "IT", vid: "L6aCnVIePJE" },
+  { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "NL", vid: "1Hs0dGRBEMo" },
+  { city: "Prague, Czech", tz: "Europe/Prague", flag: "CZ", vid: "GQzTVAiMhoI" },
+  { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "TR", vid: "x6x6GnXrXhg" },
+  { city: "New York, USA", tz: "America/New_York", flag: "US", vid: "live_stream?channel=UC6qrG3W8SMK0jior2olka3g" },
+  { city: "Miami Beach, USA", tz: "America/New_York", flag: "US", vid: "VHW_sF3BKFI" },
+  { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "US", vid: "vCadcBR95oU" },
+  { city: "Havana, Cuba", tz: "America/Havana", flag: "CU", vid: "jPOdsautHbo" },
+  { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "AR", vid: "4EGhElaZeXk" },
+  { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "AU", vid: "Y2gTSjoEExc" },
+  { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "TW", vid: "Q8SMl0bAOqo" }
 ];
 
 var newsFeeds = [
-  { name: "BBC News", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
-  { name: "Reuters", country: "International", flag: "\u{1F30D}", url: "<https://feeds.reuters.com/reuters/worldNews>" },
-  { name: "Al Jazeera", country: "Qatar", flag: "\u{1F1F6}\u{1F1E6}", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
-  { name: "DW News", country: "Germany", flag: "\u{1F1E9}\u{1F1EA}", url: "<https://rss.dw.com/rdf/rss-en-world>" },
-  { name: "France24", country: "France", flag: "\u{1F1EB}\u{1F1F7}", url: "<https://www.france24.com/en/rss>" },
-  { name: "NHK World", country: "Japan", flag: "\u{1F1EF}\u{1F1F5}", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
-  { name: "ABC News", country: "Australia", flag: "\u{1F1E6}\u{1F1FA}", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
-  { name: "NDTV", country: "India", flag: "\u{1F1EE}\u{1F1F3}", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
-  { name: "CNA", country: "Singapore", flag: "\u{1F1F8}\u{1F1EC}", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
-  { name: "The Guardian", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://www.theguardian.com/world/rss>" }
+  { name: "BBC News", country: "UK", flag: "GB", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
+  { name: "Reuters", country: "International", flag: "INTL", url: "<https://feeds.reuters.com/reuters/worldNews>" },
+  { name: "Al Jazeera", country: "Qatar", flag: "QA", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
+  { name: "DW News", country: "Germany", flag: "DE", url: "<https://rss.dw.com/rdf/rss-en-world>" },
+  { name: "France24", country: "France", flag: "FR", url: "<https://www.france24.com/en/rss>" },
+  { name: "NHK World", country: "Japan", flag: "JP", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
+  { name: "ABC News", country: "Australia", flag: "AU", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
+  { name: "NDTV", country: "India", flag: "IN", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
+  { name: "CNA", country: "Singapore", flag: "SG", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
+  { name: "The Guardian", country: "UK", flag: "GB", url: "<https://www.theguardian.com/world/rss>" }
 ];
 
 // ========== STATE ==========
-var currentMode = 'camera';
+var currentMode = "camera";
 var currentIndex = 0;
 var isPaused = false;
 var progressPercent = 0;
@@ -248,26 +247,27 @@ function showCamera() {
     currentIndex = 0;
   }
   var cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  var src = "<https://www.youtube.com/embed/>" + cam.vid + (cam.vid.indexOf("?") >= 0 ? "&" : "?") + "autoplay=1&mute=1&controls=0&playsinline=1";
+  var sep = cam.vid.indexOf("?") >= 0 ? "&" : "?";
+  var src = "<https://www.youtube.com/embed/>" + cam.vid + sep + "autoplay=1&mute=1&controls=0&playsinline=1";
 
-  document.getElementById('content').innerHTML =
+  document.getElementById("content").innerHTML =
     '<div class="camera-container fade-enter">' +
       '<iframe src="' + src + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>' +
       '<div class="nav-zone nav-zone-left" onclick="goPrev()"><div class="nav-arrow">&#9664;</div></div>' +
       '<div class="nav-zone nav-zone-right" onclick="goNext()"><div class="nav-arrow">&#9654;</div></div>' +
     '</div>';
 
-  document.getElementById('locationName').textContent = cam.flag + " " + cam.city;
+  document.getElementById("locationName").textContent = cam.flag + " " + cam.city;
   updateTime(cam.tz);
 }
 
 function updateTime(tz) {
   try {
     var now = new Date();
-    var timeStr = now.toLocaleTimeString('en-US', {
-      timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false
+    var timeStr = now.toLocaleTimeString("en-US", {
+      timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false
     });
-    document.getElementById('locationTime').textContent = timeStr;
+    document.getElementById("locationTime").textContent = timeStr;
   } catch(e) {}
 }
 
@@ -279,7 +279,7 @@ function fetchRandomNews() {
   return fetch(RSS_PROXY + encodeURIComponent(feed.url))
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.status === 'ok' && data.items && data.items.length > 0) {
+      if (data.status === "ok" && data.items && data.items.length > 0) {
         return data.items.map(function(item) {
           item.feedName = feed.name;
           item.feedCountry = feed.country;
@@ -293,10 +293,10 @@ function fetchRandomNews() {
 }
 
 function loadNewsPool() {
-  document.getElementById('content').innerHTML =
+  document.getElementById("content").innerHTML =
     '<div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div>';
-  document.getElementById('locationName').textContent = 'Loading news...';
-  document.getElementById('locationTime').textContent = '';
+  document.getElementById("locationName").textContent = "Loading news...";
+  document.getElementById("locationTime").textContent = "";
 
   Promise.all([fetchRandomNews(), fetchRandomNews(), fetchRandomNews()])
     .then(function(results) {
@@ -305,7 +305,7 @@ function loadNewsPool() {
       if (cachedNews.length > 0) {
         showNewsItem();
       } else {
-        document.getElementById('content').innerHTML =
+        document.getElementById("content").innerHTML =
           '<div class="loading">Could not load news. Try again.</div>';
       }
     });
@@ -315,19 +315,19 @@ function showNewsItem() {
   if (cachedNews.length === 0) { loadNewsPool(); return; }
   var item = cachedNews[newsIndex % cachedNews.length];
 
-  var tempDiv = document.createElement('div');
-  tempDiv.innerHTML = item.description || '';
-  var cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
-  if (cleanDesc.length > 300) cleanDesc = cleanDesc.substring(0, 300) + '...';
+  var tempDiv = document.createElement("div");
+  tempDiv.innerHTML = item.description || "";
+  var cleanDesc = tempDiv.textContent || tempDiv.innerText || "";
+  if (cleanDesc.length > 300) cleanDesc = cleanDesc.substring(0, 300) + "...";
 
-  var pubDate = '';
+  var pubDate = "";
   if (item.pubDate) {
-    try { pubDate = new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch(e) {}
+    try { pubDate = new Date(item.pubDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch(e) {}
   }
 
-  document.getElementById('content').innerHTML =
+  document.getElementById("content").innerHTML =
     '<div class="news-container fade-enter">' +
-      '<div class="news-source">' + item.feedFlag + ' ' + item.feedName + ' &mdash; ' + item.feedCountry + '</div>' +
+      '<div class="news-source">' + item.feedFlag + ' ' + item.feedName + ' - ' + item.feedCountry + '</div>' +
       '<div class="news-divider"></div>' +
       '<h1 class="news-title">' + item.title + '</h1>' +
       '<p class="news-description">' + cleanDesc + '</p>' +
@@ -337,13 +337,13 @@ function showNewsItem() {
       '<div class="nav-zone nav-zone-right" onclick="goNext()"><div class="nav-arrow">&#9654;</div></div>' +
     '</div>';
 
-  document.getElementById('locationName').textContent = item.feedFlag + ' ' + item.feedName;
-  document.getElementById('locationTime').textContent = pubDate;
+  document.getElementById("locationName").textContent = item.feedFlag + " " + item.feedName;
+  document.getElementById("locationTime").textContent = pubDate;
 }
 
 // ========== NAVIGATION ==========
 function goNext() {
-  if (currentMode === 'camera') {
+  if (currentMode === "camera") {
     currentIndex = (currentIndex + 1) % shuffledCameras.length;
     showCamera();
   } else {
@@ -355,7 +355,7 @@ function goNext() {
 }
 
 function goPrev() {
-  if (currentMode === 'camera') {
+  if (currentMode === "camera") {
     currentIndex = (currentIndex - 1 + shuffledCameras.length) % shuffledCameras.length;
     showCamera();
   } else {
@@ -367,39 +367,39 @@ function goPrev() {
 
 function togglePause() {
   isPaused = !isPaused;
-  document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
+  document.getElementById("pauseBtn").innerHTML = isPaused ? "&#9654;" : "&#10074;&#10074;";
 }
 
 function switchMode(mode) {
   currentMode = mode;
-  var tabs = document.querySelectorAll('.mode-tab');
+  var tabs = document.querySelectorAll(".mode-tab");
   for (var i = 0; i < tabs.length; i++) {
-    if (tabs[i].getAttribute('data-mode') === mode) {
-      tabs[i].className = 'mode-tab active';
+    if (tabs[i].getAttribute("data-mode") === mode) {
+      tabs[i].className = "mode-tab active";
     } else {
-      tabs[i].className = 'mode-tab';
+      tabs[i].className = "mode-tab";
     }
   }
-  if (mode === 'camera') { showCamera(); } else { loadNewsPool(); }
+  if (mode === "camera") { showCamera(); } else { loadNewsPool(); }
   resetProgress();
 }
 
 // ========== PROGRESS ==========
 function getInterval() {
-  return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
+  return currentMode === "camera" ? CAMERA_INTERVAL : NEWS_INTERVAL;
 }
 
 function resetProgress() {
   progressPercent = 0;
-  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById("progressFill").style.width = "0%";
 }
 
 setInterval(function() {
   if (isPaused) return;
   progressPercent += (100 / getInterval());
-  document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
+  document.getElementById("progressFill").style.width = Math.min(progressPercent, 100) + "%";
   if (progressPercent >= 100) { goNext(); }
-  if (currentMode === 'camera' && shuffledCameras.length > 0) {
+  if (currentMode === "camera" && shuffledCameras.length > 0) {
     var cam = shuffledCameras[currentIndex % shuffledCameras.length];
     updateTime(cam.tz);
   }
