@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Language" content="en">
 <title>World Window</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { height: 100dvh; height: 100vh; }
+  @supports (height: 100dvh) { html { height: 100dvh; } }
   body {
     background: #0a0a1a;
     color: #e0e0e0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -22,10 +24,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 20px;
+    padding: 10px 20px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
     z-index: 10;
+    flex-shrink: 0;
   }
   .app-title {
     font-size: 18px;
@@ -72,7 +76,8 @@
     background: #000;
     position: relative;
   }
-  .camera-container iframe {
+  .camera-container iframe,
+  .camera-container #ytPlayerDiv {
     width: 100%;
     height: 100%;
     border: none;
@@ -124,27 +129,27 @@
     position: relative;
   }
   .news-source {
-    font-size: 12px;
+    font-size: 32px;
     color: #888;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     letter-spacing: 1px;
     text-transform: uppercase;
   }
   .news-title {
-    font-size: 26px;
+    font-size: 64px;
     font-weight: 700;
     line-height: 1.35;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     color: #fff;
   }
   .news-description {
-    font-size: 16px;
+    font-size: 44px;
     line-height: 1.6;
     color: #bbb;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
   .news-meta {
-    font-size: 12px;
+    font-size: 32px;
     color: #666;
   }
   .news-link {
@@ -152,7 +157,7 @@
     margin-top: 16px;
     color: #5ba8f5;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 36px;
   }
   .news-divider {
     width: 40px;
@@ -163,24 +168,26 @@
 
   /* Footer */
   footer {
-    padding: 10px 20px 14px;
+    padding: 12px 20px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
     z-index: 10;
+    flex-shrink: 0;
   }
   .location-info {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
-    min-height: 24px;
+    margin-bottom: 6px;
+    min-height: 28px;
   }
   .location-name {
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
   }
   .location-time {
-    font-size: 14px;
+    font-size: 16px;
     color: #888;
     font-variant-numeric: tabular-nums;
   }
@@ -190,7 +197,7 @@
     background: rgba(255,255,255,0.08);
     border-radius: 2px;
     overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .progress-fill {
     height: 100%;
@@ -208,9 +215,9 @@
     background: rgba(255,255,255,0.08);
     border: none;
     color: #ccc;
-    height: 44px;
-    border-radius: 22px;
-    font-size: 14px;
+    height: 40px;
+    border-radius: 20px;
+    font-size: 15px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -223,12 +230,44 @@
     background: rgba(255,255,255,0.2);
   }
   .ctrl-btn.round {
-    width: 44px;
+    width: 40px;
     padding: 0;
   }
   .ctrl-label {
-    font-size: 12px;
+    font-size: 14px;
     color: #aaa;
+  }
+
+  /* Camera overlay */
+  .camera-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.85);
+    z-index: 4;
+    transition: opacity 0.5s;
+  }
+  .camera-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .camera-overlay-text {
+    color: #888;
+    font-size: 18px;
+    margin-top: 12px;
+  }
+  .camera-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #5ba8f5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   /* Loading */
@@ -291,58 +330,52 @@
   </div>
 </footer>
 
+<script src="<https://www.youtube.com/iframe_api>"></script>
 <script>
-// ========== DATA ==========
-// Using YouTube channel IDs (live_stream?channel=) for stability
-// Falls back to video IDs where channel method is unavailable
+// ========== YT API ==========
+let ytApiReady = false;
+let ytPlayer = null;
+function onYouTubeIframeAPIReady() { ytApiReady = true; }
 
+// ========== DATA ==========
 const cameras = [
-  // Japan
   { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UCgdHxnHSXvcAi4PaMIY1Ltg" },
   { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UCMxNcaFBLSXEhAIZKMDXbCw" },
-  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", videoId: "HtjVVTAbOZI" },
-  // Korea
-  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", videoId: "gO0bsPClMBc" },
+  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UC8bRCo7lGBfPsfzmIJ4bm9A" },
+  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", channelId: "UCQ2O-08tY-GeWaSxxjEKNMQ" },
   { city: "Busan, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", videoId: "bSkAqlbkjKs" },
-  // Southeast Asia
   { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "\u{1F1F9}\u{1F1ED}", videoId: "RRzgtJBueMk" },
   { city: "Singapore", tz: "Asia/Singapore", flag: "\u{1F1F8}\u{1F1EC}", videoId: "M0g5HdRmFCQ" },
-  // Middle East
   { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "\u{1F1E6}\u{1F1EA}", videoId: "5WfiTHiU6FI" },
-  // Europe
   { city: "London, UK", tz: "Europe/London", flag: "\u{1F1EC}\u{1F1E7}", videoId: "Zaem36S0UJQ" },
   { city: "Paris, France", tz: "Europe/Paris", flag: "\u{1F1EB}\u{1F1F7}", videoId: "cXkFOYOlAzE" },
   { city: "Rome, Italy", tz: "Europe/Rome", flag: "\u{1F1EE}\u{1F1F9}", videoId: "L6aCnVIePJE" },
   { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "\u{1F1F3}\u{1F1F1}", videoId: "1Hs0dGRBEMo" },
   { city: "Prague, Czech", tz: "Europe/Prague", flag: "\u{1F1E8}\u{1F1FF}", videoId: "GQzTVAiMhoI" },
   { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "\u{1F1F9}\u{1F1F7}", videoId: "x6x6GnXrXhg" },
-  // Americas
-  { city: "New York, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", channelId: "UCKMurPpDo0GFljMpemr48JA" },
+  { city: "New York, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", channelId: "UC6qrG3W8SMK0jior2olka3g" },
   { city: "Miami Beach, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", videoId: "VHW_sF3BKFI" },
   { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "\u{1F1FA}\u{1F1F8}", videoId: "vCadcBR95oU" },
   { city: "Havana, Cuba", tz: "America/Havana", flag: "\u{1F1E8}\u{1F1FA}", videoId: "jPOdsautHbo" },
   { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "\u{1F1E6}\u{1F1F7}", videoId: "4EGhElaZeXk" },
-  // Oceania
   { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "\u{1F1E6}\u{1F1FA}", videoId: "Y2gTSjoEExc" },
-  // Taiwan
   { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "\u{1F1F9}\u{1F1FC}", videoId: "Q8SMl0bAOqo" },
 ];
 
 const newsFeeds = [
-  { name: "BBC News", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-  { name: "Reuters", country: "International", flag: "\u{1F30D}", url: "https://feeds.reuters.com/reuters/worldNews" },
-  { name: "Al Jazeera", country: "Qatar", flag: "\u{1F1F6}\u{1F1E6}", url: "https://www.aljazeera.com/xml/rss/all.xml" },
-  { name: "DW News", country: "Germany", flag: "\u{1F1E9}\u{1F1EA}", url: "https://rss.dw.com/rdf/rss-en-world" },
-  { name: "France24", country: "France", flag: "\u{1F1EB}\u{1F1F7}", url: "https://www.france24.com/en/rss" },
-  { name: "NHK World", country: "Japan", flag: "\u{1F1EF}\u{1F1F5}", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" },
-  { name: "ABC News", country: "Australia", flag: "\u{1F1E6}\u{1F1FA}", url: "https://www.abc.net.au/news/feed/2942460/rss.xml" },
-  { name: "NDTV", country: "India", flag: "\u{1F1EE}\u{1F1F3}", url: "https://feeds.feedburner.com/ndtvnews-world-news" },
-  { name: "CNA", country: "Singapore", flag: "\u{1F1F8}\u{1F1EC}", url: "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311" },
-  { name: "The Guardian", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "https://www.theguardian.com/world/rss" },
+  { name: "BBC News", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
+  { name: "Reuters", country: "International", flag: "\u{1F30D}", url: "<https://feeds.reuters.com/reuters/worldNews>" },
+  { name: "Al Jazeera", country: "Qatar", flag: "\u{1F1F6}\u{1F1E6}", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
+  { name: "DW News", country: "Germany", flag: "\u{1F1E9}\u{1F1EA}", url: "<https://rss.dw.com/rdf/rss-en-world>" },
+  { name: "France24", country: "France", flag: "\u{1F1EB}\u{1F1F7}", url: "<https://www.france24.com/en/rss>" },
+  { name: "NHK World", country: "Japan", flag: "\u{1F1EF}\u{1F1F5}", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
+  { name: "ABC News", country: "Australia", flag: "\u{1F1E6}\u{1F1FA}", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
+  { name: "NDTV", country: "India", flag: "\u{1F1EE}\u{1F1F3}", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
+  { name: "CNA", country: "Singapore", flag: "\u{1F1F8}\u{1F1EC}", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
+  { name: "The Guardian", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://www.theguardian.com/world/rss>" },
 ];
 
 // ========== STATE ==========
-
 let currentMode = 'camera';
 let currentIndex = 0;
 let isPaused = false;
@@ -350,12 +383,15 @@ let progressPercent = 0;
 let shuffledCameras = [];
 let cachedNews = [];
 let newsIndex = 0;
+let cameraLoadTimer = null;
+let failedCameras = new Set();
 
 const CAMERA_INTERVAL = 45;
 const NEWS_INTERVAL = 20;
+const CAMERA_LOAD_TIMEOUT = 10;
+const CAMERA_PLAY_CHECK = 6;
 
 // ========== SHUFFLE ==========
-
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -366,30 +402,51 @@ function shuffle(arr) {
 }
 
 // ========== CAMERA MODE ==========
+let cameraIsPlaying = false;
+let playCheckTimer = null;
+
+function skipToNextCamera() {
+  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
+  const camKey = cam.channelId || cam.videoId;
+  failedCameras.add(camKey);
+  console.warn('Camera failed, skipping:', cam.city);
+  cleanupCamera();
+  currentIndex = (currentIndex + 1) % shuffledCameras.length;
+  resetProgress();
+  showCamera();
+}
+
+function cleanupCamera() {
+  clearInterval(cameraLoadTimer);
+  clearTimeout(playCheckTimer);
+  cameraIsPlaying = false;
+  if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
+}
 
 function showCamera() {
   if (shuffledCameras.length === 0) {
     shuffledCameras = shuffle(cameras);
     currentIndex = 0;
   }
-  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  const content = document.getElementById('content');
 
-  // Use channel-based embed if channelId is available, otherwise use videoId
-  let embedSrc;
-  if (cam.channelId) {
-    embedSrc = `https://www.youtube.com/embed/live_stream?channel=${cam.channelId}&autoplay=1&mute=1&controls=0&playsinline=1`;
-  } else {
-    embedSrc = `https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1`;
+  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
+  const camKey = cam.channelId || cam.videoId;
+  if (failedCameras.has(camKey) && failedCameras.size < shuffledCameras.length) {
+    currentIndex = (currentIndex + 1) % shuffledCameras.length;
+    showCamera();
+    return;
   }
+
+  cleanupCamera();
+  const content = document.getElementById('content');
 
   content.innerHTML = `
     <div class="camera-container fade-enter">
-      <iframe
-        src="${embedSrc}"
-        allow="autoplay; encrypted-media"
-        allowfullscreen>
-      </iframe>
+      <div id="ytPlayerDiv"></div>
+      <div class="camera-overlay" id="camOverlay">
+        <div class="camera-spinner"></div>
+        <div class="camera-overlay-text">Connecting...</div>
+      </div>
       <div class="nav-zone nav-zone-left" onclick="goPrev()">
         <div class="nav-arrow">&#9664;</div>
       </div>
@@ -401,7 +458,96 @@ function showCamera() {
 
   document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
   updateTime(cam.tz);
+
+  let countdown = CAMERA_LOAD_TIMEOUT;
+  const updateOverlayText = () => {
+    const el = document.querySelector('#camOverlay .camera-overlay-text');
+    if (el) el.textContent = `Connecting... (${countdown}s)`;
+  };
+
+  cameraLoadTimer = setInterval(() => {
+    countdown--;
+    updateOverlayText();
+    if (countdown <= 0) skipToNextCamera();
+  }, 1000);
+
+  playCheckTimer = setTimeout(() => {
+    if (!cameraIsPlaying) {
+      console.warn('Camera not playing after check, skipping:', cam.city);
+      skipToNextCamera();
+    }
+  }, CAMERA_PLAY_CHECK * 1000);
+
+  if (ytApiReady && cam.videoId) {
+    createYTPlayer(cam);
+  } else {
+    const embedSrc = cam.channelId
+      ? `<https://www.youtube.com/embed/live_stream?channel=${cam.channelId}&autoplay=1&mute=1&controls=0&playsinline=1`>
+      : `<https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1`>;
+    document.getElementById('ytPlayerDiv').outerHTML =
+      `<iframe id="camFrame" src="${embedSrc}" style="width:100%;height:100%;border:none" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    const frame = document.getElementById('camFrame');
+    if (frame) {
+      frame.addEventListener('load', () => {
+        clearTimeout(playCheckTimer);
+        playCheckTimer = setTimeout(() => {
+          cameraIsPlaying = true;
+          clearInterval(cameraLoadTimer);
+          const overlay = document.getElementById('camOverlay');
+          if (overlay) overlay.classList.add('hidden');
+        }, 3000);
+      });
+    }
+  }
 }
+
+function createYTPlayer(cam) {
+  const opts = {
+    width: '100%',
+    height: '100%',
+    videoId: cam.videoId,
+    playerVars: {
+      autoplay: 1,
+      mute: 1,
+      controls: 0,
+      playsinline: 1,
+      rel: 0,
+      modestbranding: 1,
+    },
+    events: {
+      onReady: (e) => {
+        e.target.mute();
+        e.target.playVideo();
+      },
+      onStateChange: (e) => {
+        if (e.data === 1) {
+          cameraIsPlaying = true;
+          clearInterval(cameraLoadTimer);
+          clearTimeout(playCheckTimer);
+          const overlay = document.getElementById('camOverlay');
+          if (overlay) overlay.classList.add('hidden');
+        }
+        if (e.data === 0) {
+          console.warn('Video ended (not live):', cam.city);
+          skipToNextCamera();
+        }
+      },
+      onError: (e) => {
+        console.warn('YT error:', e.data, cam.city);
+        skipToNextCamera();
+      }
+    }
+  };
+
+  try {
+    ytPlayer = new YT.Player('ytPlayerDiv', opts);
+  } catch(e) {
+    console.warn('YT Player create failed:', e);
+    skipToNextCamera();
+  }
+}
+
+setInterval(() => { failedCameras.clear(); }, 600000);
 
 function updateTime(tz) {
   const now = new Date();
@@ -415,16 +561,13 @@ function updateTime(tz) {
 }
 
 // ========== NEWS MODE ==========
-
-const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
+const RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
 
 async function fetchRandomNews() {
   const feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
-
   try {
     const resp = await fetch(RSS_PROXY + encodeURIComponent(feed.url));
     const data = await resp.json();
-
     if (data.status === 'ok' && data.items && data.items.length > 0) {
       const items = data.items.map(item => ({
         ...item,
@@ -432,8 +575,7 @@ async function fetchRandomNews() {
         feedCountry: feed.country,
         feedFlag: feed.flag,
       }));
-      const shuffled = shuffle(items);
-      return shuffled.slice(0, 5);
+      return shuffle(items).slice(0, 5);
     }
   } catch (e) {
     console.warn('Feed fetch failed:', feed.name, e);
@@ -452,10 +594,8 @@ async function loadNewsPool() {
   document.getElementById('locationName').textContent = 'Loading news...';
   document.getElementById('locationTime').textContent = '';
 
-  const promises = [fetchRandomNews(), fetchRandomNews(), fetchRandomNews()];
-  const results = await Promise.all(promises);
-  cachedNews = results.flat();
-  cachedNews = shuffle(cachedNews);
+  const results = await Promise.all([fetchRandomNews(), fetchRandomNews(), fetchRandomNews()]);
+  cachedNews = shuffle(results.flat());
   newsIndex = 0;
 
   if (cachedNews.length > 0) {
@@ -468,10 +608,7 @@ async function loadNewsPool() {
 }
 
 function showNewsItem() {
-  if (cachedNews.length === 0) {
-    loadNewsPool();
-    return;
-  }
+  if (cachedNews.length === 0) { loadNewsPool(); return; }
 
   const item = cachedNews[newsIndex % cachedNews.length];
   const content = document.getElementById('content');
@@ -492,7 +629,7 @@ function showNewsItem() {
       <h1 class="news-title">${item.title}</h1>
       <p class="news-description">${truncatedDesc}</p>
       <div class="news-meta">${pubDate}</div>
-      <a class="news-link" href="${item.link}" target="_blank" rel="noopener">Read full article</a>
+      <a class="news-link" href="${<item.link>}" target="_blank" rel="noopener">Read full article</a>
       <div class="nav-zone nav-zone-left" onclick="goPrev()">
         <div class="nav-arrow">&#9664;</div>
       </div>
@@ -502,23 +639,18 @@ function showNewsItem() {
     </div>
   `;
 
-  document.getElementById('locationName').textContent =
-    `${item.feedFlag} ${item.feedName}`;
+  document.getElementById('locationName').textContent = `${item.feedFlag} ${item.feedName}`;
   document.getElementById('locationTime').textContent = pubDate;
 }
 
 // ========== NAVIGATION ==========
-
 function goNext() {
   if (currentMode === 'camera') {
     currentIndex = (currentIndex + 1) % shuffledCameras.length;
     showCamera();
   } else {
     newsIndex++;
-    if (newsIndex >= cachedNews.length) {
-      loadNewsPool();
-      return;
-    }
+    if (newsIndex >= cachedNews.length) { loadNewsPool(); return; }
     showNewsItem();
   }
   resetProgress();
@@ -541,23 +673,16 @@ function togglePause() {
 }
 
 // ========== MODE SWITCH ==========
-
 function switchMode(mode) {
   currentMode = mode;
   document.querySelectorAll('.mode-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.mode === mode);
   });
-
-  if (mode === 'camera') {
-    showCamera();
-  } else {
-    loadNewsPool();
-  }
+  if (mode === 'camera') { showCamera(); } else { loadNewsPool(); }
   resetProgress();
 }
 
 // ========== PROGRESS & AUTO-ADVANCE ==========
-
 function getInterval() {
   return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
 }
@@ -570,15 +695,9 @@ function resetProgress() {
 function startTicker() {
   setInterval(() => {
     if (isPaused) return;
-
     progressPercent += (100 / getInterval());
-    document.getElementById('progressFill').style.width =
-      Math.min(progressPercent, 100) + '%';
-
-    if (progressPercent >= 100) {
-      goNext();
-    }
-
+    document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
+    if (progressPercent >= 100) { goNext(); }
     if (currentMode === 'camera' && shuffledCameras.length > 0) {
       const cam = shuffledCameras[currentIndex % shuffledCameras.length];
       updateTime(cam.tz);
@@ -587,7 +706,6 @@ function startTicker() {
 }
 
 // ========== INIT ==========
-
 shuffledCameras = shuffle(cameras);
 showCamera();
 startTicker();
