@@ -25,7 +25,8 @@
     padding-top: calc(10px + env(safe-area-inset-top, 0px));
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
-    z-index: 10;
+    position: relative;
+    z-index: 100;
     flex-shrink: 0;
   }
   .app-title { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
@@ -41,7 +42,7 @@
   }
   .mode-tab.active { background: rgba(255,255,255,0.15); color: #fff; }
 
-  .content { flex: 1; position: relative; overflow: hidden; }
+  .content { flex: 1; position: relative; overflow: hidden; z-index: 1; }
 
   .camera-container {
     width: 100%; height: 100%;
@@ -50,6 +51,7 @@
   }
   .camera-container iframe {
     width: 100%; height: 100%; border: none;
+    pointer-events: none;
   }
 
   .nav-zone {
@@ -101,7 +103,8 @@
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
-    z-index: 10;
+    position: relative;
+    z-index: 100;
     flex-shrink: 0;
   }
   .location-info {
@@ -181,7 +184,6 @@
 </footer>
 
 <script>
-// ========== DATA ==========
 var cameras = [
   { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCgdHxnHSXvcAi4PaMIY1Ltg" },
   { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "JP", vid: "live_stream?channel=UCMxNcaFBLSXEhAIZKMDXbCw" },
@@ -219,7 +221,6 @@ var newsFeeds = [
   { name: "The Guardian", country: "UK", flag: "GB", url: "<https://www.theguardian.com/world/rss>" }
 ];
 
-// ========== STATE ==========
 var currentMode = "camera";
 var currentIndex = 0;
 var isPaused = false;
@@ -227,7 +228,6 @@ var progressPercent = 0;
 var shuffledCameras = [];
 var cachedNews = [];
 var newsIndex = 0;
-
 var CAMERA_INTERVAL = 45;
 var NEWS_INTERVAL = 20;
 
@@ -240,7 +240,6 @@ function shuffle(arr) {
   return a;
 }
 
-// ========== CAMERA ==========
 function showCamera() {
   if (shuffledCameras.length === 0) {
     shuffledCameras = shuffle(cameras);
@@ -271,7 +270,6 @@ function updateTime(tz) {
   } catch(e) {}
 }
 
-// ========== NEWS ==========
 var RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
 
 function fetchRandomNews() {
@@ -341,7 +339,6 @@ function showNewsItem() {
   document.getElementById("locationTime").textContent = pubDate;
 }
 
-// ========== NAVIGATION ==========
 function goNext() {
   if (currentMode === "camera") {
     currentIndex = (currentIndex + 1) % shuffledCameras.length;
@@ -384,7 +381,6 @@ function switchMode(mode) {
   resetProgress();
 }
 
-// ========== PROGRESS ==========
 function getInterval() {
   return currentMode === "camera" ? CAMERA_INTERVAL : NEWS_INTERVAL;
 }
@@ -405,7 +401,6 @@ setInterval(function() {
   }
 }, 1000);
 
-// ========== INIT ==========
 shuffledCameras = shuffle(cameras);
 showCamera();
 </script>
