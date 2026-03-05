@@ -81,11 +81,6 @@
     height: 100%;
     border: none;
   }
-  .camera-offline {
-    text-align: center;
-    color: #666;
-    font-size: 16px;
-  }
 
   /* News mode */
   .news-container {
@@ -93,81 +88,80 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    padding: 40px; /* 余白を広めに */
     overflow-y: auto;
   }
   .news-source {
-    font-size: 12px;
+    font-size: 16px; /* 少し大きく */
     color: #888;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     letter-spacing: 1px;
     text-transform: uppercase;
   }
-  .news-country-flag {
-    font-size: 20px;
-    margin-right: 6px;
-  }
+  /* --- 2倍サイズに変更 --- */
   .news-title {
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.35;
-    margin-bottom: 12px;
+    font-size: 52px; /* 26pxから2倍に */
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 24px;
     color: #fff;
   }
   .news-description {
-    font-size: 16px;
-    line-height: 1.6;
-    color: #bbb;
-    margin-bottom: 16px;
+    font-size: 32px; /* 16pxから2倍に */
+    line-height: 1.5;
+    color: #ccc;
+    margin-bottom: 30px;
   }
+  /* ---------------------- */
   .news-meta {
-    font-size: 12px;
+    font-size: 16px;
     color: #666;
   }
   .news-link {
     display: inline-block;
-    margin-top: 16px;
+    margin-top: 24px;
     color: #5ba8f5;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 18px;
   }
   .news-divider {
-    width: 40px;
-    height: 2px;
-    background: rgba(255,255,255,0.1);
-    margin: 20px 0;
+    width: 60px;
+    height: 3px;
+    background: rgba(255,255,255,0.2);
+    margin: 24px 0;
   }
 
-  /* Footer */
+  /* Footer - 視認性を向上 */
   footer {
-    padding: 10px 20px 14px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
+    padding: 20px 30px 24px; /* 厚みを持たせる */
+    background: rgba(255,255,255,0.12); /* 透明度を下げて見やすく */
+    backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(255,255,255,0.1);
     z-index: 10;
   }
   .location-info {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
-    min-height: 24px;
+    margin-bottom: 12px;
+    min-height: 28px;
   }
   .location-name {
-    font-size: 15px;
-    font-weight: 500;
+    font-size: 20px; /* 15pxから大きく */
+    font-weight: 600;
   }
   .location-time {
-    font-size: 14px;
-    color: #888;
+    font-size: 18px; /* 14pxから大きく */
+    color: #aaa;
     font-variant-numeric: tabular-nums;
   }
   .progress-bar {
     width: 100%;
-    height: 3px;
-    background: rgba(255,255,255,0.08);
+    height: 4px; /* 少し太く */
+    background: rgba(255,255,255,0.1);
     border-radius: 2px;
     overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
   }
   .progress-fill {
     height: 100%;
@@ -179,16 +173,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 32px;
   }
   .ctrl-btn {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.12);
     border: none;
-    color: #ccc;
-    width: 40px;
-    height: 40px;
+    color: #fff;
+    width: 50px; /* 40pxから大きく */
+    height: 50px;
     border-radius: 50%;
-    font-size: 16px;
+    font-size: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -196,7 +190,7 @@
     transition: background 0.2s;
   }
   .ctrl-btn:active {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.3);
   }
 
   /* Loading */
@@ -205,8 +199,8 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #555;
-    font-size: 16px;
+    color: #888;
+    font-size: 20px;
   }
   .loading-dot {
     animation: blink 1.4s infinite both;
@@ -260,7 +254,6 @@
 
 <script>
 // ========== DATA ==========
-
 const cameras = [
   { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "DjdUEyjx8GM" },
   { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "n8V3kJBn_Es" },
@@ -298,11 +291,9 @@ const newsFeeds = [
 ];
 
 // ========== STATE ==========
-
 let currentMode = 'camera';
 let currentIndex = 0;
 let isPaused = false;
-let intervalId = null;
 let progressPercent = 0;
 let shuffledCameras = [];
 let cachedNews = [];
@@ -310,8 +301,6 @@ let newsIndex = 0;
 
 const CAMERA_INTERVAL = 45; // seconds
 const NEWS_INTERVAL = 20;   // seconds
-
-// ========== SHUFFLE ==========
 
 function shuffle(arr) {
   const a = [...arr];
@@ -322,8 +311,6 @@ function shuffle(arr) {
   return a;
 }
 
-// ========== CAMERA MODE ==========
-
 function showCamera() {
   if (shuffledCameras.length === 0) {
     shuffledCameras = shuffle(cameras);
@@ -331,7 +318,6 @@ function showCamera() {
   }
   const cam = shuffledCameras[currentIndex % shuffledCameras.length];
   const content = document.getElementById('content');
-
   content.innerHTML = `
     <div class="camera-container fade-enter">
       <iframe
@@ -341,7 +327,6 @@ function showCamera() {
       </iframe>
     </div>
   `;
-
   document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
   updateTime(cam.tz);
 }
@@ -349,48 +334,31 @@ function showCamera() {
 function updateTime(tz) {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', {
-    timeZone: tz,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false
   });
   document.getElementById('locationTime').textContent = timeStr;
 }
-
-// ========== NEWS MODE ==========
 
 const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 async function fetchRandomNews() {
   const feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
-
   try {
     const resp = await fetch(RSS_PROXY + encodeURIComponent(feed.url));
     const data = await resp.json();
-
     if (data.status === 'ok' && data.items && data.items.length > 0) {
       const items = data.items.map(item => ({
-        ...item,
-        feedName: feed.name,
-        feedCountry: feed.country,
-        feedFlag: feed.flag,
+        ...item, feedName: feed.name, feedCountry: feed.country, feedFlag: feed.flag,
       }));
       return shuffle(items).slice(0, 5);
     }
-  } catch (e) {
-    console.warn('Feed fetch failed:', feed.name, e);
-  }
+  } catch (e) { console.warn('Feed fetch failed:', feed.name, e); }
   return [];
 }
 
 async function loadNewsPool() {
-  document.getElementById('content').innerHTML = `
-    <div class="loading">
-      <span class="loading-dot">.</span>
-      <span class="loading-dot">.</span>
-      <span class="loading-dot">.</span>
-    </div>
-  `;
+  const content = document.getElementById('content');
+  content.innerHTML = `<div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div>`;
   document.getElementById('locationName').textContent = 'Loading news...';
   document.getElementById('locationTime').textContent = '';
 
@@ -398,33 +366,19 @@ async function loadNewsPool() {
   const results = await Promise.all(promises);
   cachedNews = shuffle(results.flat());
   newsIndex = 0;
-
-  if (cachedNews.length > 0) {
-    showNewsItem();
-  } else {
-    document.getElementById('content').innerHTML = `
-      <div class="loading">Could not load news. Try again.</div>
-    `;
-  }
+  if (cachedNews.length > 0) { showNewsItem(); }
+  else { content.innerHTML = `<div class="loading">Could not load news.</div>`; }
 }
 
 function showNewsItem() {
-  if (cachedNews.length === 0) {
-    loadNewsPool();
-    return;
-  }
-
+  if (cachedNews.length === 0) { loadNewsPool(); return; }
   const item = cachedNews[newsIndex % cachedNews.length];
   const content = document.getElementById('content');
-
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = item.description || '';
   const cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
   const truncatedDesc = cleanDesc.length > 300 ? cleanDesc.substring(0, 300) + '...' : cleanDesc;
-
-  const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  }) : '';
+  const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 
   content.innerHTML = `
     <div class="news-container fade-enter">
@@ -436,12 +390,9 @@ function showNewsItem() {
       <a class="news-link" href="${item.link}" target="_blank" rel="noopener">Read full article →</a>
     </div>
   `;
-
   document.getElementById('locationName').textContent = `${item.feedFlag} ${item.feedName}`;
   document.getElementById('locationTime').textContent = pubDate;
 }
-
-// ========== NAVIGATION ==========
 
 function goNext() {
   if (currentMode === 'camera') {
@@ -449,10 +400,7 @@ function goNext() {
     showCamera();
   } else {
     newsIndex++;
-    if (newsIndex >= cachedNews.length) {
-      loadNewsPool();
-      return;
-    }
+    if (newsIndex >= cachedNews.length) { loadNewsPool(); return; }
     showNewsItem();
   }
   resetProgress();
@@ -474,57 +422,33 @@ function togglePause() {
   document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
 }
 
-// ========== MODE SWITCH ==========
-
 function switchMode(mode) {
   currentMode = mode;
   document.querySelectorAll('.mode-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.mode === mode);
   });
-
-  if (mode === 'camera') {
-    showCamera();
-  } else {
-    loadNewsPool();
-  }
+  mode === 'camera' ? showCamera() : loadNewsPool();
   resetProgress();
 }
 
-// ========== PROGRESS & AUTO-ADVANCE ==========
-
-function getInterval() {
-  return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
-}
-
-function resetProgress() {
-  progressPercent = 0;
-  document.getElementById('progressFill').style.width = '0%';
-}
+function getInterval() { return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL; }
+function resetProgress() { progressPercent = 0; document.getElementById('progressFill').style.width = '0%'; }
 
 function startTicker() {
   setInterval(() => {
     if (isPaused) return;
-
     progressPercent += (100 / getInterval());
     document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
-
-    if (progressPercent >= 100) {
-      goNext();
-    }
-
+    if (progressPercent >= 100) { goNext(); }
     if (currentMode === 'camera' && shuffledCameras.length > 0) {
-      const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-      updateTime(cam.tz);
+      updateTime(shuffledCameras[currentIndex % shuffledCameras.length].tz);
     }
   }, 1000);
 }
 
-// ========== INIT ==========
-
 shuffledCameras = shuffle(cameras);
 showCamera();
 startTicker();
-
 </script>
 </body>
 </html>
