@@ -2,15 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>World Window Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>World Window Pro - Fixed</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  
   body {
     background: #0a0a1a;
     color: #e0e0e0;
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-    height: 100vh;
+    /* iPad Safariのツールバー対策: 100vhではなく100dvhを使用 */
+    height: 100dvh;
+    width: 100vw;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -21,62 +24,73 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 15px 25px;
-    background: rgba(20, 20, 40, 0.8);
-    backdrop-filter: blur(12px);
+    padding: 12px 25px;
+    background: rgba(20, 20, 40, 0.9);
+    backdrop-filter: blur(15px);
     z-index: 100;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
   }
-  .app-title { font-size: 22px; font-weight: 700; color: #fff; }
-  .mode-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; }
+  .app-title { font-size: 20px; font-weight: 700; color: #fff; }
+  .mode-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; }
   .mode-tab {
-    padding: 10px 22px; border-radius: 8px; border: none; background: transparent;
-    color: #aaa; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s;
+    padding: 8px 18px; border-radius: 7px; border: none; background: transparent;
+    color: #aaa; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s;
   }
   .mode-tab.active { background: #fff; color: #000; }
 
   /* Main content */
-  .content { flex: 1; position: relative; background: #000; }
+  .content { 
+    flex: 1; 
+    position: relative; 
+    background: #000; 
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
   /* Camera */
   .camera-container { width: 100%; height: 100%; }
   .camera-container iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
 
-  /* News - さらに巨大化 */
+  /* News - iPadで見やすいサイズに微調整 */
   .news-container {
     width: 100%; height: 100%; display: flex; flex-direction: column;
-    padding: 60px 40px; overflow-y: auto; justify-content: center;
+    padding: 40px; overflow-y: auto; justify-content: center;
   }
-  .news-source { font-size: 20px; color: #5ba8f5; margin-bottom: 15px; font-weight: 600; }
-  .news-title { font-size: 64px; font-weight: 800; line-height: 1.2; margin-bottom: 30px; color: #fff; }
-  .news-description { font-size: 36px; line-height: 1.6; color: #ccc; margin-bottom: 40px; }
-  .news-link { font-size: 22px; color: #5ba8f5; text-decoration: none; border-bottom: 2px solid; padding-bottom: 4px; align-self: flex-start; }
+  .news-source { font-size: 18px; color: #5ba8f5; margin-bottom: 10px; font-weight: 600; }
+  .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #fff; }
+  .news-description { font-size: clamp(18px, 3vw, 28px); line-height: 1.6; color: #ccc; margin-bottom: 35px; }
+  .news-link { font-size: 20px; color: #5ba8f5; text-decoration: none; border-bottom: 2px solid; padding-bottom: 4px; align-self: flex-start; }
 
-  /* Footer - 操作性重視 */
+  /* Footer - ここを大幅に修正 */
   footer {
-    padding: 25px 40px 35px;
+    flex-shrink: 0;
+    padding: 20px 40px;
+    /* iPad下部のセーフエリア（ホームバー）を考慮した余白 */
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
     background: #121225;
     border-top: 1px solid rgba(255,255,255,0.15);
     z-index: 100;
   }
-  .location-info { display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center; }
-  .location-name { font-size: 24px; font-weight: 700; color: #fff; }
-  .location-time { font-size: 22px; color: #888; font-variant-numeric: tabular-nums; }
+  .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; }
+  .location-name { font-size: 20px; font-weight: 700; color: #fff; }
+  .location-time { font-size: 18px; color: #888; font-variant-numeric: tabular-nums; }
   
-  .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 25px; }
+  .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 20px; }
   .progress-fill { height: 100%; background: #5ba8f5; transition: width 1s linear; }
 
-  .controls { display: flex; align-items: center; justify-content: center; gap: 60px; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 40px; }
   .ctrl-btn {
     background: rgba(255,255,255,0.15); border: none; color: #fff;
-    width: 70px; height: 70px; border-radius: 50%; font-size: 30px;
+    width: 60px; height: 60px; border-radius: 50%; font-size: 24px;
     cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
   }
   .ctrl-btn:active { background: #5ba8f5; transform: scale(0.9); }
-  .ctrl-btn.main-next { width: 90px; height: 90px; background: #5ba8f5; font-size: 40px; }
+  .ctrl-btn.main-next { width: 80px; height: 80px; background: #5ba8f5; font-size: 32px; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); }
 
   .fade-enter { animation: fadeIn 0.6s ease-out; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -107,25 +121,24 @@
 </footer>
 
 <script>
-// 2026年3月時点の有効なライブカメラID（定期的に確認が必要です）
+// 2026年3月現在、配信が安定しているライブ配信ID（音楽ビデオ回避のため厳選）
 const cameras = [
-  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "mN6S_4pXoXs" },
-  { city: "Times Square, NY", tz: "America/New_York", flag: "🇺🇸", videoId: "1-iS7LArMPA" },
-  { city: "London, UK", tz: "Europe/London", flag: "🇬🇧", videoId: "Zaem36S0UJQ" },
+  { city: "Shibuya Crossing, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "HHi7S-9S6Lg" },
+  { city: "Times Square, NY", tz: "America/New_York", flag: "🇺🇸", videoId: "AdUw5RdyZxI" },
   { city: "Venice, Italy", tz: "Europe/Rome", flag: "🇮🇹", videoId: "hpYI6PInW5U" },
   { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "🇰🇷", videoId: "v_7O77x5W-I" },
+  { city: "London, Tower Bridge", tz: "Europe/London", flag: "🇬🇧", videoId: "Zaem36S0UJQ" },
   { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "🇹🇭", videoId: "6_8YqXwL7fM" }
 ];
 
 const newsFeeds = [
   { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-  { name: "NHK World", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" },
-  { name: "Reuters", url: "https://www.reutersagency.com/feed/?best-topics=world-news" }
+  { name: "NHK World", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" }
 ];
 
 let currentMode = 'camera', currentIndex = 0, isPaused = false, progressPercent = 0;
 let shuffledCameras = [], cachedNews = [], newsIndex = 0;
-const CAMERA_INTERVAL = 60, NEWS_INTERVAL = 30;
+const CAMERA_INTERVAL = 45, NEWS_INTERVAL = 25;
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
@@ -134,7 +147,7 @@ function showCamera() {
   const cam = shuffledCameras[currentIndex % shuffledCameras.length];
   document.getElementById('content').innerHTML = `
     <div class="camera-container fade-enter">
-      <iframe src="https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0" allow="autoplay; encrypted-media"></iframe>
+      <iframe src="https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>`;
   document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
   updateTime(cam.tz);
@@ -142,23 +155,30 @@ function showCamera() {
 
 const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 async function loadNewsPool() {
-  document.getElementById('content').innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:30px">Fetching News...</div>`;
-  const results = await Promise.all(newsFeeds.map(f => fetch(RSS_PROXY + encodeURIComponent(f.url)).then(r => r.json())));
-  cachedNews = shuffle(results.flatMap(r => r.items || []));
-  showNewsItem();
+  const content = document.getElementById('content');
+  content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;color:#888;">Fetching World News...</div>`;
+  try {
+    const results = await Promise.all(newsFeeds.map(f => fetch(RSS_PROXY + encodeURIComponent(f.url)).then(r => r.json())));
+    cachedNews = shuffle(results.flatMap(r => r.items || []));
+    if (cachedNews.length > 0) showNewsItem();
+  } catch(e) {
+    content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:20px;color:#f88;">News loading failed. Check connection.</div>`;
+  }
 }
 
 function showNewsItem() {
+  if (!cachedNews.length) return;
   const item = cachedNews[newsIndex % cachedNews.length];
   const desc = (item.description || "").replace(/<[^>]*>/g, '').substring(0, 250) + "...";
   document.getElementById('content').innerHTML = `
     <div class="news-container fade-enter">
-      <div class="news-source">Latest from World News</div>
+      <div class="news-source">Latest World Report</div>
       <h1 class="news-title">${item.title}</h1>
       <p class="news-description">${desc}</p>
       <a class="news-link" href="${item.link}" target="_blank">Read Article</a>
     </div>`;
   document.getElementById('locationName').textContent = "🌍 World News";
+  document.getElementById('locationTime').textContent = "Live Update";
 }
 
 function goNext() {
@@ -168,7 +188,7 @@ function goNext() {
 }
 
 function goPrev() {
-  if (currentMode === 'camera') { currentIndex--; showCamera(); }
+  if (currentMode === 'camera') { currentIndex = (currentIndex - 1 + shuffledCameras.length) % shuffledCameras.length; showCamera(); }
   else { newsIndex = Math.max(0, newsIndex - 1); showNewsItem(); }
   resetProgress();
 }
