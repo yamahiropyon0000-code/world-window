@@ -1,11 +1,11 @@
-ー<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.28</title>
+<title>World Window Pro ver 2.29</title>
 <style>
-  /* 全てを漆黒に。redという単語すらCSSから排除 */
+  /* 赤色を完全に追放。漆黒を徹底 */
   * { margin: 0; padding: 0; box-sizing: border-box; background-color: transparent; }
   html, body {
     background-color: #000 !important; color: #e0e0e0;
@@ -13,6 +13,7 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
+  /* 開始オーバーレイ */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #000 !important; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -53,14 +54,14 @@
   .ctrl-btn { background-color: #222 !important; border: none; color: #fff; width: 70px; height: 70px; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; }
   .ctrl-btn:active { background-color: #5ba8f5 !important; }
 
-  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; }
+  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #444; display: none; z-index: 30; }
   .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
 </style>
 </head>
 <body>
 
 <div id="startOverlay" onclick="initApp()">
-  <button class="start-btn">世界を巡る旅を始める</button>
+  <button class="start-btn">旅を開始する</button>
 </div>
 
 <header translate="no">
@@ -86,7 +87,7 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" style="background-color:#5ba8f5 !important;" onclick="manualNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.28</div>
+  <div class="version-tag">ver 2.29</div>
 </footer>
 
 <script>
@@ -94,27 +95,23 @@ let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 let nextImage = new Image(), nextReady = false;
 
+// 撮影年(year)を追加。古い写真用の検索キーワードも調整。
 const locations = [
-  { country: "フランス", city: "パリ", spot: "エッフェル塔", en: "Paris,Eiffel" },
-  { country: "日本", city: "東京", spot: "渋谷スクランブル交差点", en: "Tokyo,Shibuya" },
+  { country: "フランス", city: "パリ", spot: "エッフェル塔", year: "1889", en: "Paris,Eiffel,1889" },
+  { country: "日本", city: "東京", spot: "銀座", year: "1930", en: "Ginza,Tokyo,1930" },
+  { country: "アメリカ", city: "ニューヨーク", spot: "タイムズスクエア", year: "1950", en: "NewYork,TimesSquare,1950" },
   { country: "イギリス", city: "ロンドン", spot: "ビッグ・ベン", en: "London,BigBen" },
-  { country: "アメリカ", city: "ニューヨーク", spot: "タイムズスクエア", en: "NewYork,TimesSquare" },
   { country: "イタリア", city: "ベネチア", spot: "サン・マルコ広場", en: "Venice,SanMarco" },
   { country: "日本", city: "京都", spot: "伏見稲荷大社", en: "Kyoto,Fushimi" },
-  { country: "イタリア", city: "ローマ", spot: "コロッセオ", en: "Rome,Colosseum" },
-  { country: "スペイン", city: "バルセロナ", spot: "サグラダ・ファミリア", en: "Barcelona,Sagrada" },
-  { country: "UAE", city: "ドバイ", spot: "ブルジュ・ハリファ", en: "Dubai,BurjKhalifa" },
-  { country: "韓国", city: "ソウル", spot: "景福宮", en: "Seoul,Gyeongbokgung" },
+  { country: "エジプト", city: "ギザ", spot: "ピラミッド", year: "1920", en: "Giza,Pyramid,old" },
+  { country: "ドイツ", city: "ベルリン", spot: "ブランデンブルク門", year: "1945", en: "Berlin,1945" },
+  { country: "ブラジル", city: "リオデジャネイロ", spot: "コルコバードのキリスト像", en: "Rio,Christ" },
+  { country: "ギリシャ", city: "サントリーニ島", spot: "イアの街並み", en: "Santorini,Oia" },
   { country: "シンガポール", city: "シンガポール", spot: "マリーナベイ・サンズ", en: "Singapore,MarinaBay" },
   { country: "タイ", city: "バンコク", spot: "ワット・アルン", en: "Bangkok,WatArun" },
-  { country: "ギリシャ", city: "サントリーニ島", spot: "イアの街並み", en: "Santorini,Oia" },
-  { country: "スイス", city: "ツェルマット", spot: "マッターホルン", en: "Zermatt,Matterhorn" },
-  { country: "オーストラリア", city: "シドニー", spot: "オペラハウス", en: "Sydney,OperaHouse" },
-  { country: "中国", city: "上海", spot: "外灘（バンド）", en: "Shanghai,TheBund" },
-  { country: "チェコ", city: "プラハ", spot: "カレル橋", en: "Prague,CharlesBridge" },
-  { country: "トルコ", city: "カッパドキア", spot: "気球の風景", en: "Cappadocia" },
-  { country: "アメリカ", city: "サンフランシスコ", spot: "ゴールデンゲートブリッジ", en: "SanFrancisco,Bridge" },
-  { country: "ドイツ", city: "ベルリン", spot: "ブランデンブルク門", en: "Berlin,Brandenburg" }
+  { country: "日本", city: "大阪", spot: "道頓堀", year: "1970", en: "Osaka,Dotonbori,1970" },
+  { country: "チェコ", city: "プラハ", spot: "カレル橋", year: "1910", en: "Prague,CharlesBridge,old" },
+  { country: "アメリカ", city: "サンフランシスコ", spot: "ゴールデンゲートブリッジ", year: "1937", en: "SanFrancisco,Bridge,1937" }
 ];
 
 function shuffle(array) {
@@ -130,11 +127,14 @@ function formatLocation(loc) {
   if (loc.country) parts.push(loc.country);
   if (loc.city && loc.city !== loc.country) parts.push(loc.city);
   if (loc.spot) parts.push(loc.spot);
-  return parts.join(" / ");
+  let caption = parts.join(" / ");
+  if (loc.year) caption += ` / ${loc.year}`;
+  return caption;
 }
 
 function getImageUrl(loc) {
-  return `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.en)}/all?lock=${Math.floor(Math.random() * 100000)}`;
+  // 検索ヒット率を上げるためキーワードを整理
+  return `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.en)}/all?lock=${Math.floor(Math.random() * 99999)}`;
 }
 
 function initApp() {
@@ -166,6 +166,7 @@ function preloadNext() {
   nextImage.src = url;
 }
 
+// 自動切り替え：バーが100%になり、かつ準備ができている時のみ
 function autoNext() {
   if (currentMode === 'news') {
     newsIndex++;
@@ -174,7 +175,6 @@ function autoNext() {
     return;
   }
   
-  // バーが100%に達し、かつ次の画像が読み込み済みなら即座に切り替え
   if (nextReady) {
     currentIndex++;
     const loc = locations[currentIndex % locations.length];
@@ -183,11 +183,12 @@ function autoNext() {
     progress = 0;
     preloadNext();
   } else {
-    // 準備がまだならバーを100%で止めて待機
+    // 準備がまだならバーを100%で止めて待機（カクつき防止）
     progress = 100;
   }
 }
 
+// 手動切り替え（＞）：即座に黒画面にし、バーを止めてロード開始
 function manualNext() {
   isPaused = true;
   progress = 0;
@@ -204,7 +205,6 @@ function manualNext() {
   const nameLabel = document.getElementById('locationName');
   const loader = document.getElementById('loader');
 
-  // 手動時は即座に黒画面
   contentArea.style.backgroundImage = 'none';
   nameLabel.textContent = '';
   loader.style.display = 'block';
@@ -271,7 +271,6 @@ function startTicker() {
     if (isPaused) return;
     const limit = (currentMode === 'photo' ? 45 : 25);
     
-    // 次の画像が準備できていない場合はバーを100%で止める
     if (progress >= 100) {
       if (nextReady || currentMode === 'news') {
         autoNext();
