@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+ー<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.27</title>
+<title>World Window Pro ver 2.28</title>
 <style>
-  /* 全てを漆黒に。赤を一切許容しません */
+  /* 全てを漆黒に。redという単語すらCSSから排除 */
   * { margin: 0; padding: 0; box-sizing: border-box; background-color: transparent; }
   html, body {
     background-color: #000 !important; color: #e0e0e0;
@@ -13,7 +13,6 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 開始オーバーレイ */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #000 !important; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -31,13 +30,11 @@
   .mode-tab { padding: 8px 18px; border-radius: 7px; border: none; color: #888; font-size: 14px; font-weight: 600; cursor: pointer; }
   .mode-tab.active { background-color: #fff !important; color: #000 !important; }
 
-  /* メイン：赤を絶対に出さない */
   .content { 
     flex: 1; position: relative; overflow: hidden; background-color: #000 !important;
     background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center;
   }
 
-  /* ニュースコンテナ */
   .news-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #000 !important; display: none; flex-direction: column;
@@ -47,7 +44,7 @@
   .news-link { display: inline-block; margin-top: 30px; color: #5ba8f5 !important; font-size: 20px; text-decoration: none; border-bottom: 2px solid #5ba8f5; }
 
   footer { padding: 25px 40px; padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px)); border-top: 1px solid #1a1a1a; }
-  .location-name { font-size: 26px; font-weight: 800; color: #fff; min-height: 1.2em; margin-bottom: 15px; }
+  .location-name { font-size: 26px; font-weight: 800; color: #fff; min-height: 1.2em; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
   
   .progress-bar { width: 100%; height: 6px; background-color: #1a1a1a !important; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
   #progressFill { height: 100%; background: #5ba8f5 !important; width: 0%; transition: width 0.1s linear; }
@@ -56,14 +53,14 @@
   .ctrl-btn { background-color: #222 !important; border: none; color: #fff; width: 70px; height: 70px; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; }
   .ctrl-btn:active { background-color: #5ba8f5 !important; }
 
-  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; }
+  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; }
   .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
 </style>
 </head>
 <body>
 
 <div id="startOverlay" onclick="initApp()">
-  <button class="start-btn">旅を開始する</button>
+  <button class="start-btn">世界を巡る旅を始める</button>
 </div>
 
 <header translate="no">
@@ -85,40 +82,39 @@
   <div id="locationName" class="location-name"></div>
   <div class="progress-bar"><div id="progressFill"></div></div>
   <div class="controls">
-    <button class="ctrl-btn" onclick="goPrev()">&#9664;</button>
+    <button class="ctrl-btn" onclick="manualPrev()">&#9664;</button>
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" style="background-color:#5ba8f5 !important;" onclick="manualNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.27</div>
+  <div class="version-tag">ver 2.28</div>
 </footer>
 
 <script>
 let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
-let nextImage = new Image();
-let nextReady = false;
+let nextImage = new Image(), nextReady = false;
 
 const locations = [
-  { cityEn: "Paris", cityJa: "パリ", countryJa: "フランス" },
-  { cityEn: "Tokyo", cityJa: "東京", countryJa: "日本" },
-  { cityEn: "London", cityJa: "ロンドン", countryJa: "イギリス" },
-  { cityEn: "New York", cityJa: "ニューヨーク", countryJa: "アメリカ" },
-  { cityEn: "Venice", cityJa: "ベネチア", countryJa: "イタリア" },
-  { cityEn: "Kyoto", cityJa: "京都", countryJa: "日本" },
-  { cityEn: "Rome", cityJa: "ローマ", countryJa: "イタリア" },
-  { cityEn: "Barcelona", cityJa: "バルセロナ", countryJa: "スペイン" },
-  { cityEn: "Dubai", cityJa: "ドバイ", countryJa: "UAE" },
-  { cityEn: "Seoul", cityJa: "ソウル", countryJa: "韓国" },
-  { cityEn: "Singapore", cityJa: "シンガポール", countryJa: "シンガポール" },
-  { cityEn: "Bangkok", cityJa: "バンコク", countryJa: "タイ" },
-  { cityEn: "Prague", cityJa: "プラハ", countryJa: "チェコ" },
-  { cityEn: "Vienna", cityJa: "ウィーン", countryJa: "オーストリア" },
-  { cityEn: "Amsterdam", cityJa: "アムステルダム", countryJa: "オランダ" },
-  { cityEn: "Lisbon", cityJa: "リスボン", countryJa: "ポルトガル" },
-  { cityEn: "Santorini", cityJa: "サントリーニ島", countryJa: "ギリシャ" },
-  { cityEn: "Swiss Alps", cityJa: "スイス・アルプス", countryJa: "スイス" },
-  { cityEn: "Banff", cityJa: "バンフ", countryJa: "カナダ" },
-  { cityEn: "Sydney", cityJa: "シドニー", countryJa: "オーストラリア" }
+  { country: "フランス", city: "パリ", spot: "エッフェル塔", en: "Paris,Eiffel" },
+  { country: "日本", city: "東京", spot: "渋谷スクランブル交差点", en: "Tokyo,Shibuya" },
+  { country: "イギリス", city: "ロンドン", spot: "ビッグ・ベン", en: "London,BigBen" },
+  { country: "アメリカ", city: "ニューヨーク", spot: "タイムズスクエア", en: "NewYork,TimesSquare" },
+  { country: "イタリア", city: "ベネチア", spot: "サン・マルコ広場", en: "Venice,SanMarco" },
+  { country: "日本", city: "京都", spot: "伏見稲荷大社", en: "Kyoto,Fushimi" },
+  { country: "イタリア", city: "ローマ", spot: "コロッセオ", en: "Rome,Colosseum" },
+  { country: "スペイン", city: "バルセロナ", spot: "サグラダ・ファミリア", en: "Barcelona,Sagrada" },
+  { country: "UAE", city: "ドバイ", spot: "ブルジュ・ハリファ", en: "Dubai,BurjKhalifa" },
+  { country: "韓国", city: "ソウル", spot: "景福宮", en: "Seoul,Gyeongbokgung" },
+  { country: "シンガポール", city: "シンガポール", spot: "マリーナベイ・サンズ", en: "Singapore,MarinaBay" },
+  { country: "タイ", city: "バンコク", spot: "ワット・アルン", en: "Bangkok,WatArun" },
+  { country: "ギリシャ", city: "サントリーニ島", spot: "イアの街並み", en: "Santorini,Oia" },
+  { country: "スイス", city: "ツェルマット", spot: "マッターホルン", en: "Zermatt,Matterhorn" },
+  { country: "オーストラリア", city: "シドニー", spot: "オペラハウス", en: "Sydney,OperaHouse" },
+  { country: "中国", city: "上海", spot: "外灘（バンド）", en: "Shanghai,TheBund" },
+  { country: "チェコ", city: "プラハ", spot: "カレル橋", en: "Prague,CharlesBridge" },
+  { country: "トルコ", city: "カッパドキア", spot: "気球の風景", en: "Cappadocia" },
+  { country: "アメリカ", city: "サンフランシスコ", spot: "ゴールデンゲートブリッジ", en: "SanFrancisco,Bridge" },
+  { country: "ドイツ", city: "ベルリン", spot: "ブランデンブルク門", en: "Berlin,Brandenburg" }
 ];
 
 function shuffle(array) {
@@ -128,43 +124,48 @@ function shuffle(array) {
   }
 }
 
+function formatLocation(loc) {
+  if (!loc) return "";
+  let parts = [];
+  if (loc.country) parts.push(loc.country);
+  if (loc.city && loc.city !== loc.country) parts.push(loc.city);
+  if (loc.spot) parts.push(loc.spot);
+  return parts.join(" / ");
+}
+
+function getImageUrl(loc) {
+  return `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.en)}/all?lock=${Math.floor(Math.random() * 100000)}`;
+}
+
 function initApp() {
   document.getElementById('startOverlay').style.display = 'none';
   shuffle(locations);
-  startPhotoTour();
+  currentIndex = 0;
+  loadFirstPhoto();
   startTicker();
 }
 
-// 最初の表示
-function startPhotoTour() {
+function loadFirstPhoto() {
   const loc = locations[currentIndex % locations.length];
-  const contentArea = document.getElementById('mainView');
-  const nameLabel = document.getElementById('locationName');
-  
-  const imgUrl = getUrl(loc);
+  const imgUrl = getImageUrl(loc);
   const tempImg = new Image();
   tempImg.onload = () => {
-    contentArea.style.backgroundImage = `url('${imgUrl}')`;
-    nameLabel.textContent = `${loc.countryJa} / ${loc.cityJa}`;
-    preloadNext(); // 次の画像を裏で読み込み開始
+    document.getElementById('mainView').style.backgroundImage = `url('${imgUrl}')`;
+    document.getElementById('locationName').textContent = formatLocation(loc);
+    preloadNext();
   };
   tempImg.src = imgUrl;
 }
 
-function getUrl(loc) {
-  return `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.cityEn)},landmark/all?lock=${Date.now()}`;
-}
-
-// 次の画像を裏側で読み込んでおく
 function preloadNext() {
   nextReady = false;
   const nextLoc = locations[(currentIndex + 1) % locations.length];
+  const url = getImageUrl(nextLoc);
   nextImage = new Image();
   nextImage.onload = () => { nextReady = true; };
-  nextImage.src = getUrl(nextLoc);
+  nextImage.src = url;
 }
 
-// 進捗バーが最後まで行った時の自動切り替え
 function autoNext() {
   if (currentMode === 'news') {
     newsIndex++;
@@ -173,23 +174,22 @@ function autoNext() {
     return;
   }
   
+  // バーが100%に達し、かつ次の画像が読み込み済みなら即座に切り替え
   if (nextReady) {
-    // 準備ができていれば一瞬で差し替え
     currentIndex++;
     const loc = locations[currentIndex % locations.length];
     document.getElementById('mainView').style.backgroundImage = `url('${nextImage.src}')`;
-    document.getElementById('locationName').textContent = `${loc.countryJa} / ${loc.cityJa}`;
+    document.getElementById('locationName').textContent = formatLocation(loc);
     progress = 0;
     preloadNext();
   } else {
-    // 準備ができていなければ黒画面で待機
-    manualNext();
+    // 準備がまだならバーを100%で止めて待機
+    progress = 100;
   }
 }
 
-// ユーザーが > を押した時の手動切り替え
 function manualNext() {
-  isPaused = true; // ロード中はバーを止める
+  isPaused = true;
   progress = 0;
   document.getElementById('progressFill').style.width = '0%';
   
@@ -204,26 +204,26 @@ function manualNext() {
   const nameLabel = document.getElementById('locationName');
   const loader = document.getElementById('loader');
 
-  // 黒画面にする
+  // 手動時は即座に黒画面
   contentArea.style.backgroundImage = 'none';
   nameLabel.textContent = '';
   loader.style.display = 'block';
 
   currentIndex++;
   const loc = locations[currentIndex % locations.length];
-  const imgUrl = getUrl(loc);
+  const url = getImageUrl(loc);
   const tempImg = new Image();
   tempImg.onload = () => {
     loader.style.display = 'none';
-    contentArea.style.backgroundImage = `url('${imgUrl}')`;
-    nameLabel.textContent = `${loc.countryJa} / ${loc.cityJa}`;
-    isPaused = false; // 写真が出たらバーを再開
+    contentArea.style.backgroundImage = `url('${url}')`;
+    nameLabel.textContent = formatLocation(loc);
+    isPaused = false;
     preloadNext();
   };
-  tempImg.src = imgUrl;
+  tempImg.src = url;
 }
 
-function goPrev() {
+function manualPrev() {
   currentIndex = (currentIndex - 1 + locations.length) % locations.length;
   manualNext();
 }
@@ -270,16 +270,17 @@ function startTicker() {
   setInterval(() => {
     if (isPaused) return;
     const limit = (currentMode === 'photo' ? 45 : 25);
-    progress += (10 / limit);
     
-    // バーが100に達するまで絶対に切り替えない
+    // 次の画像が準備できていない場合はバーを100%で止める
     if (progress >= 100) {
-      progress = 100;
-      document.getElementById('progressFill').style.width = '100%';
-      autoNext();
-    } else {
-      document.getElementById('progressFill').style.width = progress + '%';
+      if (nextReady || currentMode === 'news') {
+        autoNext();
+      }
+      return;
     }
+    
+    progress += (10 / limit);
+    document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
   }, 100);
 }
 </script>
