@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 1.06</title>
+<title>World Window Pro ver 1.07</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -19,9 +19,13 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     z-index: 1000; cursor: pointer;
   }
-  .start-btn {
-    padding: 20px 50px; background: #5ba8f5; color: #fff;
-    border-radius: 50px; font-size: 26px; font-weight: 700;
+  .start-btn { padding: 20px 50px; background: #5ba8f5; color: #fff; border-radius: 50px; font-size: 26px; font-weight: 700; }
+
+  /* エラー通知（さらに目立つように） */
+  #errorStatus {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; color: #ff6b6b; z-index: 100; display: none; width: 85%;
+    background: rgba(0,0,0,0.8); padding: 30px; border: 2px solid #ff6b6b; border-radius: 20px;
   }
 
   header, footer { flex-shrink: 0; z-index: 100; }
@@ -44,13 +48,11 @@
     background: #0a0a1a; display: none; flex-direction: column;
     padding: 60px 40px; justify-content: center; z-index: 10;
   }
-  .news-title { font-size: clamp(32px, 5vw, 60px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; }
 
   footer {
     padding: 20px 40px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
     background: #121225; border-top: 1px solid rgba(255,255,255,0.15); position: relative;
   }
-  .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
   .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 25px; }
   .progress-fill { height: 100%; background: #5ba8f5; width: 0%; transition: width 1s linear; }
 
@@ -63,7 +65,7 @@
   .main-next { background: #5ba8f5; }
 
   .version-tag {
-    position: absolute; bottom: 8px; right: 100px;
+    position: absolute; bottom: 8px; right: 120px; /* さらに左へ */
     font-size: 10px; color: rgba(255,255,255,0.4);
   }
 </style>
@@ -83,6 +85,11 @@
 </header>
 
 <div class="content">
+  <div id="errorStatus">
+    <h2 style="margin-bottom:15px;">動画の読み込みに失敗しました</h2>
+    <p id="errorDetail" style="font-size:18px; line-height:1.5;">YouTubeがこのドメインでの再生をブロックしています。<br>「次へ」ボタンで別の動画を試してください。</p>
+    <button onclick="goNext()" style="margin-top:20px; padding:10px 20px; border-radius:10px; border:none; background:#5ba8f5; color:#fff;">手動で次へ進む</button>
+  </div>
   <div id="playerContainer"></div>
   <div id="newsContainer" class="news-container" lang="en">
     <div id="newsContent"></div>
@@ -90,8 +97,8 @@
 </div>
 
 <footer translate="no">
-  <div class="location-info">
-    <span id="locationName">Waiting...</span>
+  <div class="location-info" style="margin-bottom:12px;">
+    <span id="locationName" style="font-size:22px; font-weight:700;">Waiting...</span>
   </div>
   <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
   <div class="controls">
@@ -99,28 +106,26 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 1.06</div>
+  <div class="version-tag">ver 1.07</div>
 </footer>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 let player, currentMode = 'camera', isPaused = false, progress = 0;
-// 世界各地の風景動画（ライブではなく通常の動画）
+// 極めて一般的な（制限の少ない）風景動画に一旦差し替え
 const videos = [
-  { city: "Tokyo, Japan (Rainy Night)", id: "pWb9S-G7mIc" },
-  { city: "New York City, USA (Drone)", id: "mREu6m_XUis" },
-  { city: "Paris, France (Walking)", id: "3j-Y9mOudbw" },
-  { city: "Venice, Italy (Gondola)", id: "mREu6m_XUis" },
-  { city: "Switzerland (Train Window)", id: "7v_vT8t80Yk" },
-  { city: "Iceland (Nature)", id: "m6kXm_f3TfQ" }
+  { city: "Iceland Landscapes", id: "pWb9S-G7mIc" },
+  { city: "Switzerland Mountains", id: "7v_vT8t80Yk" },
+  { city: "Ocean Relaxation", id: "m6kXm_f3TfQ" },
+  { city: "Tokyo Walk", id: "3j-Y9mOudbw" }
 ];
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('playerContainer', {
     height: '100%', width: '100%',
-    playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'playsinline': 1, 'loop': 1 },
-    events: { 'onReady': () => console.log("Ready"), 'onError': () => goNext() }
+    playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'playsinline': 1 },
+    events: { 'onReady': () => console.log("API Ready"), 'onError': onPlayerError }
   });
 }
 
@@ -130,36 +135,21 @@ function initApp() {
   startTicker();
 }
 
+function onPlayerError(e) {
+  // 自動スキップを廃止し、一時停止してユーザーに知らせる
+  isPaused = true;
+  document.getElementById('errorStatus').style.display = 'block';
+  console.log("YouTube Error Code:", e.data);
+}
+
 function showVideo() {
   const vid = videos[currentIndex % videos.length];
   if (player && player.loadVideoById) {
+    document.getElementById('errorStatus').style.display = 'none';
+    isPaused = false;
     player.loadVideoById(vid.id);
     document.getElementById('locationName').textContent = vid.city;
   }
-}
-
-function switchMode(mode) {
-  currentMode = mode;
-  document.querySelectorAll('.mode-tab').forEach((t, i) => t.classList.toggle('active', (i===0 && mode==='camera') || (i===1 && mode==='news')));
-  document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
-  if (mode === 'news') loadNews(); else showVideo();
-  resetProgress();
-}
-
-async function loadNews() {
-  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
-  const data = await res.json();
-  cachedNews = data.items;
-  showNewsItem();
-}
-
-function showNewsItem() {
-  if (!cachedNews.length) return;
-  const item = cachedNews[newsIndex % cachedNews.length];
-  document.getElementById('newsContent').innerHTML = `
-    <h1 class="news-title">${item.title}</h1>
-    <p class="news-description">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
-  `;
 }
 
 function goNext() {
@@ -177,7 +167,30 @@ function goPrev() {
 function togglePause() {
   isPaused = !isPaused;
   document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
-  if (isPaused) player.pauseVideo(); else player.playVideo();
+  if (player && player.pauseVideo) { if (isPaused) player.pauseVideo(); else player.playVideo(); }
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
+  if (mode === 'news') loadNews(); else showVideo();
+  resetProgress();
+}
+
+async function loadNews() {
+  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
+  const data = await res.json();
+  cachedNews = data.items;
+  showNewsItem();
+}
+
+function showNewsItem() {
+  if (!cachedNews.length) return;
+  const item = cachedNews[newsIndex % cachedNews.length];
+  document.getElementById('newsContent').innerHTML = `
+    <h1 style="font-size:clamp(32px, 5vw, 60px); margin-bottom:20px;">${item.title}</h1>
+    <p style="font-size:clamp(18px, 3vw, 32px); color:#ccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
+  `;
 }
 
 function resetProgress() { progress = 0; }
