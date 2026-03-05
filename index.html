@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.00</title>
+<title>World Window Pro ver 2.01</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -12,17 +12,16 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 背景写真のスタイル */
+  /* 背景写真：ふわっと切り替わるアニメーション */
   #bgContainer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover; background-position: center;
-    transition: background-image 1.5s ease-in-out; /* ふわっと切り替わる */
+    transition: background-image 1.2s ease-in-out;
     z-index: 1;
   }
-  /* 写真を少し暗くして文字を読みやすくする */
   #bgOverlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.3); z-index: 2;
+    background: rgba(0, 0, 0, 0.35); z-index: 2;
   }
 
   header, footer { position: relative; z-index: 100; flex-shrink: 0; }
@@ -30,7 +29,6 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 25px; background: rgba(20, 20, 40, 0.8); backdrop-filter: blur(15px);
   }
-  .app-title { font-size: 20px; font-weight: 700; color: #fff; }
   .mode-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; }
   .mode-tab {
     padding: 8px 18px; border-radius: 7px; border: none; background: transparent;
@@ -39,24 +37,18 @@
   .mode-tab.active { background: #fff; color: #000; }
 
   .content { flex: 1; position: relative; overflow: hidden; z-index: 10; }
-
-  /* ニュースコンテナ */
   .news-container {
     width: 100%; height: 100%; display: none; flex-direction: column;
     padding: 60px 40px; justify-content: center; background: rgba(10, 10, 26, 0.7);
     backdrop-filter: blur(10px);
   }
-  .news-title { font-size: clamp(32px, 5vw, 60px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-  .news-description { font-size: clamp(18px, 3vw, 32px); line-height: 1.6; color: #eee; text-shadow: 0 1px 5px rgba(0,0,0,0.5); }
+  .news-title { font-size: clamp(32px, 5vw, 60px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; }
 
   footer {
     padding: 20px 40px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
-    background: rgba(18, 18, 37, 0.85); backdrop-filter: blur(15px);
-    border-top: 1px solid rgba(255,255,255,0.15);
+    background: rgba(18, 18, 37, 0.85); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,255,255,0.15);
   }
   .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
-  .location-name { font-size: 22px; font-weight: 700; color: #fff; }
-
   .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 25px; }
   .progress-fill { height: 100%; background: #5ba8f5; width: 0%; transition: width 1s linear; }
 
@@ -64,13 +56,12 @@
   .ctrl-btn {
     background: rgba(255,255,255,0.2); border: none; color: #fff;
     width: 70px; height: 70px; border-radius: 50%; font-size: 30px;
-    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+    display: flex; align-items: center; justify-content: center;
   }
-  .ctrl-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
-  .main-next { background: #5ba8f5; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.4); }
+  .main-next { background: #5ba8f5; }
 
   .version-tag {
-    position: absolute; bottom: 8px; right: 80px;
+    position: absolute; bottom: 8px; right: 100px;
     font-size: 10px; color: rgba(255,255,255,0.5);
   }
 </style>
@@ -96,7 +87,7 @@
 
 <footer translate="no">
   <div class="location-info">
-    <span id="locationName">Loading Window...</span>
+    <span id="locationName" style="font-size:22px; font-weight:700;">Loading...</span>
   </div>
   <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
   <div class="controls">
@@ -104,41 +95,49 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.00</div>
+  <div class="version-tag">ver 2.01</div>
 </footer>
 
 <script>
 let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 
-// 世界各地の絶景写真キーワード（Unsplashからランダム取得用）
 const locations = [
-  { name: "Paris, France", keyword: "paris,architecture" },
-  { name: "Tokyo, Japan", keyword: "tokyo,shibuya" },
-  { name: "Swiss Alps", keyword: "switzerland,mountain" },
-  { name: "New York, USA", keyword: "newyork,city" },
-  { name: "Iceland Nature", keyword: "iceland,landscape" },
+  { name: "Paris, France", keyword: "paris,city" },
+  { name: "Tokyo, Japan", keyword: "tokyo,neon" },
+  { name: "Swiss Alps", keyword: "switzerland,snow" },
+  { name: "New York, USA", keyword: "nyc,skyscrapers" },
   { name: "Venice, Italy", keyword: "venice,canal" },
   { name: "Kyoto, Japan", keyword: "kyoto,temple" },
-  { name: "Sahara Desert", keyword: "sahara,desert" },
-  { name: "Santorini, Greece", keyword: "santorini,sea" }
+  { name: "Santorini, Greece", keyword: "santorini,sea" },
+  { name: "Dubai, UAE", keyword: "dubai,desert" }
 ];
 
 function showPhoto() {
   const loc = locations[currentIndex % locations.length];
   const bg = document.getElementById('bgContainer');
-  // キャッシュ回避のためランダム数値を付与
-  const imgUrl = `https://source.unsplash.com/featured/1600x900/?${loc.keyword}&sig=${Math.random()}`;
   
-  bg.style.backgroundImage = `url('${imgUrl}')`;
-  document.getElementById('locationName').textContent = loc.name;
+  // LoremFlickrに切り替え（Unsplash Source廃止のため）
+  const imgUrl = `https://loremflickr.com/1600/900/${loc.keyword}?lock=${currentIndex + 100}`;
+  
+  // 読み込みが完了してから表示（真っ黒になるのを防ぐ）
+  const tempImg = new Image();
+  tempImg.onload = function() {
+    bg.style.backgroundImage = `url('${imgUrl}')`;
+    document.getElementById('locationName').textContent = loc.name;
+  };
+  tempImg.src = imgUrl;
 }
 
 async function loadNews() {
-  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
-  const data = await res.json();
-  cachedNews = data.items;
-  showNewsItem();
+  try {
+    const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
+    const data = await res.json();
+    cachedNews = data.items;
+    showNewsItem();
+  } catch(e) {
+    document.getElementById('newsContent').innerHTML = "<h1>News failed to load.</h1>";
+  }
 }
 
 function showNewsItem() {
@@ -147,8 +146,9 @@ function showNewsItem() {
   document.getElementById('newsContent').innerHTML = `
     <h1 class="news-title">${item.title}</h1>
     <p class="news-description">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
-    <p style="margin-top:20px; color:#5ba8f5; font-size:18px;">Source: BBC World News</p>
+    <p style="margin-top:20px; color:#5ba8f5; font-size:18px;">BBC World News</p>
   `;
+  document.getElementById('locationName').textContent = "World News";
 }
 
 function switchMode(mode) {
@@ -156,8 +156,7 @@ function switchMode(mode) {
   document.getElementById('tabPhoto').classList.toggle('active', mode === 'photo');
   document.getElementById('tabNews').classList.toggle('active', mode === 'news');
   document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
-  
-  if (mode === 'news') loadNews();
+  if (mode === 'news') loadNews(); else showPhoto();
   resetProgress();
 }
 
@@ -183,14 +182,12 @@ function resetProgress() { progress = 0; }
 function startTicker() {
   setInterval(() => {
     if (isPaused) return;
-    // 写真は45秒、ニュースは25秒で切り替え
     progress += (100 / (currentMode === 'photo' ? 45 : 25));
     document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
     if (progress >= 100) goNext();
   }, 1000);
 }
 
-// 初期起動
 showPhoto();
 startTicker();
 </script>
