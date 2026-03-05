@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 1.02</title>
+<title>World Window Pro ver 1.04</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  
   body {
-    background: #0a0a1a;
+    background: #000;
     color: #e0e0e0;
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     height: 100dvh;
@@ -18,176 +17,171 @@
     flex-direction: column;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 25px;
-    background: rgba(20, 20, 40, 0.9);
-    backdrop-filter: blur(15px);
-    z-index: 100;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    flex-shrink: 0;
+  /* 開始オーバーレイ */
+  #startOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 10, 26, 0.98);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000; cursor: pointer;
   }
-  .app-title { font-size: 20px; font-weight: 700; color: #fff; }
+  .start-btn {
+    padding: 20px 50px; background: #5ba8f5; color: #fff;
+    border-radius: 50px; font-size: 26px; font-weight: 700;
+    box-shadow: 0 0 30px rgba(91, 168, 245, 0.4);
+  }
+
+  /* 翻訳させないエリアの設定 */
+  header, footer, .controls {
+    unicode-bidi: isolate;
+  }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 25px; background: rgba(20, 20, 40, 0.9);
+    backdrop-filter: blur(15px); z-index: 100; flex-shrink: 0;
+  }
+  .app-title { font-size: 20px; font-weight: 700; }
   .mode-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; }
   .mode-tab {
     padding: 8px 18px; border-radius: 7px; border: none; background: transparent;
-    color: #aaa; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s;
+    color: #aaa; font-size: 14px; font-weight: 600; cursor: pointer;
   }
   .mode-tab.active { background: #fff; color: #000; }
 
-  .content { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; flex-direction: column; }
-  .camera-container { width: 100%; height: 100%; }
-  .camera-container iframe { width: 100%; height: 100%; border: none; }
+  .content { flex: 1; position: relative; overflow: hidden; }
+  #playerContainer { width: 100%; height: 100%; pointer-events: none; }
 
+  /* ニュースコンテナ：ここを翻訳対象にする */
   .news-container {
-    width: 100%; height: 100%; display: flex; flex-direction: column;
-    padding: 40px; overflow-y: auto; justify-content: center;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #0a0a1a; display: none; flex-direction: column;
+    padding: 60px 40px; justify-content: center; z-index: 10;
   }
-  .news-source { font-size: 18px; color: #5ba8f5; margin-bottom: 10px; font-weight: 600; }
-  .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #fff; }
-  .news-description { font-size: clamp(18px, 3vw, 28px); line-height: 1.6; color: #ccc; margin-bottom: 35px; }
-  .news-link { font-size: 20px; color: #5ba8f5; text-decoration: none; border-bottom: 2px solid; padding-bottom: 4px; align-self: flex-start; }
+  .news-title { font-size: clamp(32px, 5vw, 60px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #fff; }
+  .news-description { font-size: clamp(18px, 3vw, 32px); line-height: 1.6; color: #ccc; }
 
   footer {
-    flex-shrink: 0;
-    padding: 20px 40px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
-    background: #121225;
-    border-top: 1px solid rgba(255,255,255,0.15);
-    z-index: 100;
+    padding: 20px 40px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
+    background: #121225; border-top: 1px solid rgba(255,255,255,0.15); z-index: 100;
     position: relative;
   }
   .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; }
-  .location-name { font-size: 20px; font-weight: 700; color: #fff; }
-  .location-time { font-size: 18px; color: #888; font-variant-numeric: tabular-nums; }
-  
-  .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 20px; }
-  .progress-fill { height: 100%; background: #5ba8f5; transition: width 1s linear; }
+  .location-name { font-size: 22px; font-weight: 700; }
+  .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 25px; }
+  .progress-fill { height: 100%; background: #5ba8f5; width: 0%; transition: width 1s linear; }
 
-  .controls { display: flex; align-items: center; justify-content: center; gap: 45px; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 50px; }
   .ctrl-btn {
     background: rgba(255,255,255,0.15); border: none; color: #fff;
-    width: 70px; height: 70px; border-radius: 50%; font-size: 28px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+    width: 70px; height: 70px; border-radius: 50%; font-size: 30px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
-  .ctrl-btn.main-next { background: #5ba8f5; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); }
+  .ctrl-btn.main-next { background: #5ba8f5; }
 
-  /* バージョン表記のスタイル - 位置を調整 */
   .version-tag {
-    position: absolute;
-    bottom: 8px;
-    right: 40px; /* 15pxから40pxへ移動して「丸み」を回避 */
-    font-size: 10px;
-    color: rgba(255,255,255,0.4);
-    pointer-events: none;
+    position: absolute; bottom: 8px; right: 80px; /* さらに左へ */
+    font-size: 10px; color: rgba(255,255,255,0.4);
   }
-
-  .fade-enter { animation: fadeIn 0.6s ease-out; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<header>
+<div id="startOverlay" onclick="initApp()">
+  <div class="start-btn">タップして開始</div>
+  <p style="margin-top:20px; color:#888;">Chromeでの自動翻訳と再生を準備します</p>
+</div>
+
+<header translate="no">
   <span class="app-title">World Window</span>
   <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="camera" onclick="switchMode('camera')">Camera</button>
-    <button class="mode-tab" data-mode="news" onclick="switchMode('news')">News</button>
+    <button class="mode-tab active" onclick="switchMode('camera')">Camera</button>
+    <button class="mode-tab" onclick="switchMode('news')">News</button>
   </div>
 </header>
 
-<div class="content" id="content"></div>
+<div class="content">
+  <div id="playerContainer"></div>
+  <div id="newsContainer" class="news-container" lang="en">
+    <div id="newsContent"></div>
+  </div>
+</div>
 
-<footer>
+<footer translate="no">
   <div class="location-info">
-    <span class="location-name" id="locationName">Loading...</span>
-    <span class="location-time" id="locationTime"></span>
+    <span id="locationName">Waiting...</span>
+    <span id="locationTime"></span>
   </div>
-  <div class="progress-bar">
-    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-  </div>
+  <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
   <div class="controls">
     <button class="ctrl-btn" onclick="goPrev()">&#9664;</button>
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 1.02</div>
+  <div class="version-tag">ver 1.04</div>
 </footer>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/**
- * ライブカメラリスト
- * 埋め込み制限が比較的ゆるい、公共性の高いカメラを優先して再選定しました
- */
-const cameras = [
-  { city: "東京都庁展望台から, 日本", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "5U1uY0zYyks" },
-  { city: "ロンドン, UK (Sky News Live)", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "9AuqUPW28s" },
-  { city: "NASA Live (宇宙ステーション)", tz: "UTC", flag: "🚀", type: "video", id: "21X5lGlDOfg" },
-  { city: "アフリカのサファリ (野生動物)", tz: "Africa/Johannesburg", flag: "🇿🇦", type: "video", id: "FvFwYfT_OTo" },
-  { city: "タイ, プーケットビーチ", tz: "Asia/Bangkok", flag: "🇹🇭", type: "video", id: "1Yf9e_8qMAs" },
-  { city: "東京 港区 (ライブカメラ)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "m6kXm_f3TfQ" }
+let player, currentMode = 'camera', isPaused = false, progress = 0;
+let cameras = [
+  { city: "東京都庁展望台", tz: "Asia/Tokyo", id: "5U1uY0zYyks" },
+  { city: "NASA Space Station", tz: "UTC", id: "21X5lGlDOfg" },
+  { city: "Sky News Live", tz: "Europe/London", id: "9AuqUPW28s" },
+  { city: "Africa Wildlife", tz: "Africa/Johannesburg", id: "FvFwYfT_OTo" },
+  { city: "Tokyo Tower Live", tz: "Asia/Tokyo", id: "m6kXm_f3TfQ" }
 ];
+let currentIndex = 0, cachedNews = [], newsIndex = 0;
 
-const newsFeeds = [
-  { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-  { name: "NHK News", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" }
-];
-
-let currentMode = 'camera', currentIndex = 0, isPaused = false, progressPercent = 0;
-let shuffledCameras = [], cachedNews = [], newsIndex = 0;
-const CAMERA_INTERVAL = 45, NEWS_INTERVAL = 25;
-
-function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
-
-function showCamera() {
-  if (!shuffledCameras.length) shuffledCameras = shuffle(cameras);
-  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  
-  let embedUrl = "";
-  if (cam.type === "channel") {
-    embedUrl = `https://www.youtube.com/embed/live_stream?channel=${cam.id}&autoplay=1&mute=1&origin=${encodeURIComponent(window.location.origin)}`;
-  } else {
-    embedUrl = `https://www.youtube.com/embed/${cam.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&origin=${encodeURIComponent(window.location.origin)}`;
-  }
-
-  document.getElementById('content').innerHTML = `
-    <div class="camera-container fade-enter">
-      <iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>`;
-  
-  document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
-  updateTime(cam.tz);
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('playerContainer', {
+    height: '100%', width: '100%',
+    playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'playsinline': 1 },
+    events: { 'onReady': onPlayerReady, 'onError': onPlayerError }
+  });
 }
 
-const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
-async function loadNewsPool() {
-  const content = document.getElementById('content');
-  content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;color:#888;">Fetching News...</div>`;
-  try {
-    const results = await Promise.all(newsFeeds.map(f => fetch(RSS_PROXY + encodeURIComponent(f.url)).then(r => r.json())));
-    cachedNews = shuffle(results.flatMap(r => r.items || []));
-    if (cachedNews.length > 0) showNewsItem();
-  } catch(e) {
-    content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:20px;color:#f88;">News loading failed.</div>`;
+function initApp() {
+  document.getElementById('startOverlay').style.display = 'none';
+  if (player && player.playVideo) player.playVideo();
+  showCamera();
+  startTicker();
+}
+
+function onPlayerReady() { console.log("Ready"); }
+
+function onPlayerError() { goNext(); }
+
+function showCamera() {
+  const cam = cameras[currentIndex % cameras.length];
+  if (player && player.loadVideoById) {
+    player.loadVideoById(cam.id);
+    document.getElementById('locationName').textContent = cam.city;
   }
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach((t, i) => t.classList.toggle('active', (i===0 && mode==='camera') || (i===1 && mode==='news')));
+  document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
+  if (mode === 'news') loadNews(); else showCamera();
+  resetProgress();
+}
+
+async function loadNews() {
+  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
+  const data = await res.json();
+  cachedNews = data.items;
+  showNewsItem();
 }
 
 function showNewsItem() {
   if (!cachedNews.length) return;
   const item = cachedNews[newsIndex % cachedNews.length];
-  const desc = (item.description || "").replace(/<[^>]*>/g, '').substring(0, 250) + "...";
-  document.getElementById('content').innerHTML = `
-    <div class="news-container fade-enter">
-      <div class="news-source">World Report</div>
-      <h1 class="news-title">${item.title}</h1>
-      <p class="news-description">${desc}</p>
-      <a class="news-link" href="${item.link}" target="_blank">Read Full Article</a>
-    </div>`;
-  document.getElementById('locationName').textContent = "🌍 World News";
-  document.getElementById('locationTime').textContent = "Live Update";
+  document.getElementById('newsContent').innerHTML = `
+    <h1 class="news-title">${item.title}</h1>
+    <p class="news-description">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
+    <p style="margin-top:20px; color:#5ba8f5;">Article by BBC News</p>
+  `;
 }
 
 function goNext() {
@@ -197,42 +191,22 @@ function goNext() {
 }
 
 function goPrev() {
-  if (currentMode === 'camera') { currentIndex = (currentIndex - 1 + shuffledCameras.length) % shuffledCameras.length; showCamera(); }
+  if (currentMode === 'camera') { currentIndex = (currentIndex - 1 + cameras.length) % cameras.length; showCamera(); }
   else { newsIndex = Math.max(0, newsIndex - 1); showNewsItem(); }
   resetProgress();
 }
 
-function togglePause() {
-  isPaused = !isPaused;
-  document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
+function togglePause() { isPaused = !isPaused; document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;'; }
+function resetProgress() { progress = 0; }
+
+function startTicker() {
+  setInterval(() => {
+    if (isPaused) return;
+    progress += (100 / (currentMode === 'camera' ? 45 : 25));
+    document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
+    if (progress >= 100) goNext();
+  }, 1000);
 }
-
-function switchMode(mode) {
-  currentMode = mode;
-  document.querySelectorAll('.mode-tabs .mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-  mode === 'camera' ? showCamera() : loadNewsPool();
-  resetProgress();
-}
-
-function updateTime(tz) {
-  try {
-    const timeStr = new Date().toLocaleTimeString('ja-JP', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
-    document.getElementById('locationTime').textContent = timeStr;
-  } catch(e) { document.getElementById('locationTime').textContent = "--:--"; }
-}
-
-function resetProgress() { progressPercent = 0; document.getElementById('progressFill').style.width = '0%'; }
-
-setInterval(() => {
-  if (isPaused) return;
-  const interval = currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
-  progressPercent += (100 / interval);
-  document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
-  if (progressPercent >= 100) goNext();
-}, 1000);
-
-shuffledCameras = shuffle(cameras);
-showCamera();
 </script>
 </body>
 </html>
