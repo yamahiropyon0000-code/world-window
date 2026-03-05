@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro - Uniform UI</title>
+<title>World Window Pro - Stable</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
@@ -18,7 +18,6 @@
     flex-direction: column;
   }
 
-  /* Header */
   header {
     display: flex;
     align-items: center;
@@ -38,18 +37,10 @@
   }
   .mode-tab.active { background: #fff; color: #000; }
 
-  /* Main content */
-  .content { 
-    flex: 1; 
-    position: relative; 
-    background: #000; 
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+  .content { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; flex-direction: column; }
 
   .camera-container { width: 100%; height: 100%; }
-  .camera-container iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
+  .camera-container iframe { width: 100%; height: 100%; border: none; }
 
   .news-container {
     width: 100%; height: 100%; display: flex; flex-direction: column;
@@ -60,7 +51,6 @@
   .news-description { font-size: clamp(18px, 3vw, 28px); line-height: 1.6; color: #ccc; margin-bottom: 35px; }
   .news-link { font-size: 20px; color: #5ba8f5; text-decoration: none; border-bottom: 2px solid; padding-bottom: 4px; align-self: flex-start; }
 
-  /* Footer - ボタンサイズを統一 */
   footer {
     flex-shrink: 0;
     padding: 20px 40px;
@@ -78,7 +68,7 @@
 
   .controls { display: flex; align-items: center; justify-content: center; gap: 45px; }
   
-  /* ボタンの円をすべて同じサイズ(70px)に設定 */
+  /* ボタンサイズを70pxで統一 */
   .ctrl-btn {
     background: rgba(255,255,255,0.15); 
     border: none; 
@@ -94,13 +84,7 @@
     transition: 0.2s;
   }
   .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
-
-  /* 「次へ」ボタンの色だけ青にして視認性を維持しつつ、サイズは統一 */
-  .ctrl-btn.main-next { 
-    background: #5ba8f5; 
-    box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); 
-  }
-  .ctrl-btn.main-next:active { background: #4a91d1; }
+  .ctrl-btn.main-next { background: #5ba8f5; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); }
 
   .fade-enter { animation: fadeIn 0.6s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -134,19 +118,23 @@
 </footer>
 
 <script>
-// 2026年3月現在、配信が安定しているライブ配信ID
+/**
+ * ライブカメラリスト
+ * type: 'video' (特定の動画ID) または 'channel' (チャンネルの最新ライブを自動取得)
+ * 2026年3月現在、埋め込み許可が比較的安定しているものを厳選しています
+ */
 const cameras = [
-  { city: "Shibuya Crossing, Tokyo", tz: "Asia/Tokyo", flag: "🇯🇵", videoId: "HHi7S-9S6Lg" },
-  { city: "Times Square, NY", tz: "America/New_York", flag: "🇺🇸", videoId: "AdUw5RdyZxI" },
-  { city: "Venice, Italy", tz: "Europe/Rome", flag: "🇮🇹", videoId: "hpYI6PInW5U" },
-  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "🇰🇷", videoId: "v_7O77x5W-I" },
-  { city: "London, Tower Bridge", tz: "Europe/London", flag: "🇬🇧", videoId: "Zaem36S0UJQ" },
-  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "🇹🇭", videoId: "6_8YqXwL7fM" }
+  { city: "渋谷スクランブル交差点, 東京", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "mN6S_4pXoXs" },
+  { city: "タイムズスクエア, NY", tz: "America/New_York", flag: "🇺🇸", type: "video", id: "1-iS7LArMPA" },
+  { city: "ロンドン, タワーブリッジ", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "Zaem36S0UJQ" },
+  { city: "ベネチア, イタリア", tz: "Europe/Rome", flag: "🇮🇹", type: "video", id: "hpYI6PInW5U" },
+  { city: "ソウル, 漢江", tz: "Asia/Seoul", flag: "🇰🇷", type: "video", id: "v_7O77x5W-I" },
+  { city: "ライブニュース (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "channel", id: "UCGCZAYq5GojszU8_j8M8Skg" }
 ];
 
 const newsFeeds = [
   { name: "BBC News", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-  { name: "NHK World", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" }
+  { name: "NHK News", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" }
 ];
 
 let currentMode = 'camera', currentIndex = 0, isPaused = false, progressPercent = 0;
@@ -158,10 +146,20 @@ function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 function showCamera() {
   if (!shuffledCameras.length) shuffledCameras = shuffle(cameras);
   const cam = shuffledCameras[currentIndex % shuffledCameras.length];
+  
+  // 埋め込み用URLの構築 (originを追加して安定性を向上)
+  let embedUrl = "";
+  if (cam.type === "channel") {
+    embedUrl = `https://www.youtube.com/embed/live_stream?channel=${cam.id}&autoplay=1&mute=1&origin=${window.location.origin}`;
+  } else {
+    embedUrl = `https://www.youtube.com/embed/${cam.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&origin=${window.location.origin}`;
+  }
+
   document.getElementById('content').innerHTML = `
     <div class="camera-container fade-enter">
-      <iframe src="https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      <iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>`;
+  
   document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
   updateTime(cam.tz);
 }
@@ -169,7 +167,7 @@ function showCamera() {
 const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 async function loadNewsPool() {
   const content = document.getElementById('content');
-  content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;color:#888;">Fetching World News...</div>`;
+  content.innerHTML = `<div style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;color:#888;">Fetching News...</div>`;
   try {
     const results = await Promise.all(newsFeeds.map(f => fetch(RSS_PROXY + encodeURIComponent(f.url)).then(r => r.json())));
     cachedNews = shuffle(results.flatMap(r => r.items || []));
@@ -185,10 +183,10 @@ function showNewsItem() {
   const desc = (item.description || "").replace(/<[^>]*>/g, '').substring(0, 250) + "...";
   document.getElementById('content').innerHTML = `
     <div class="news-container fade-enter">
-      <div class="news-source">Latest World Report</div>
+      <div class="news-source">World Report</div>
       <h1 class="news-title">${item.title}</h1>
       <p class="news-description">${desc}</p>
-      <a class="news-link" href="${item.link}" target="_blank">Read Article</a>
+      <a class="news-link" href="${item.link}" target="_blank">Read Full Article</a>
     </div>`;
   document.getElementById('locationName').textContent = "🌍 World News";
   document.getElementById('locationTime').textContent = "Live Update";
@@ -213,13 +211,14 @@ function togglePause() {
 
 function switchMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.querySelectorAll('.mode-tabs .mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
   mode === 'camera' ? showCamera() : loadNewsPool();
   resetProgress();
 }
 
 function updateTime(tz) {
-  document.getElementById('locationTime').textContent = new Date().toLocaleTimeString('ja-JP', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  const timeStr = new Date().toLocaleTimeString('ja-JP', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  document.getElementById('locationTime').textContent = timeStr;
 }
 
 function resetProgress() { progressPercent = 0; document.getElementById('progressFill').style.width = '0%'; }
