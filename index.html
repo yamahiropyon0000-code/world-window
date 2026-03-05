@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta http-equiv="Content-Language" content="en">
 <title>World Window</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { height: 100dvh; height: 100vh; }
+  html { height: 100vh; }
   @supports (height: 100dvh) { html { height: 100dvh; } }
   body {
     background: #0a0a1a;
@@ -18,8 +17,6 @@
     display: flex;
     flex-direction: column;
   }
-
-  /* Header */
   header {
     display: flex;
     align-items: center;
@@ -31,142 +28,74 @@
     z-index: 10;
     flex-shrink: 0;
   }
-  .app-title {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
+  .app-title { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
   .mode-tabs {
-    display: flex;
-    gap: 4px;
+    display: flex; gap: 4px;
     background: rgba(255,255,255,0.08);
-    border-radius: 8px;
-    padding: 3px;
+    border-radius: 8px; padding: 3px;
   }
   .mode-tab {
-    padding: 8px 18px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: #999;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
+    padding: 8px 18px; border-radius: 6px; border: none;
+    background: transparent; color: #999; font-size: 14px;
+    font-weight: 500; cursor: pointer; transition: all 0.3s;
   }
-  .mode-tab.active {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-  }
+  .mode-tab.active { background: rgba(255,255,255,0.15); color: #fff; }
 
-  /* Main content */
-  .content {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-  }
+  .content { flex: 1; position: relative; overflow: hidden; }
 
-  /* Camera mode */
   .camera-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #000;
-    position: relative;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; position: relative;
   }
-  .camera-container iframe,
-  .camera-container #ytPlayerDiv {
-    width: 100%;
-    height: 100%;
-    border: none;
+  .camera-container iframe {
+    width: 100%; height: 100%; border: none;
   }
 
-  /* Swipe / tap zones on content area */
   .nav-zone {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 25%;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+    position: absolute; top: 0; bottom: 0; width: 25%;
+    z-index: 5; display: flex; align-items: center; cursor: pointer;
   }
-  .nav-zone:active .nav-arrow {
-    opacity: 0.8;
-  }
+  .nav-zone:active .nav-arrow { opacity: 0.8; }
   .nav-zone-left { left: 0; justify-content: flex-start; padding-left: 8px; }
   .nav-zone-right { right: 0; justify-content: flex-end; padding-right: 8px; }
   .nav-arrow {
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    opacity: 0.3;
-    transition: opacity 0.3s;
+    background: rgba(0,0,0,0.5); color: #fff;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; opacity: 0.3; transition: opacity 0.3s;
     pointer-events: none;
   }
-  .nav-zone:hover .nav-arrow {
-    opacity: 0.7;
-  }
+  .nav-zone:hover .nav-arrow { opacity: 0.7; }
 
-  /* News mode */
   .news-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    padding-bottom: 80px;
-    overflow-y: auto;
-    position: relative;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    padding: 24px; padding-bottom: 80px;
+    overflow-y: auto; position: relative;
   }
   .news-source {
-    font-size: 32px;
-    color: #888;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    font-size: 32px; color: #888; margin-bottom: 6px;
+    letter-spacing: 1px; text-transform: uppercase;
   }
   .news-title {
-    font-size: 64px;
-    font-weight: 700;
-    line-height: 1.35;
-    margin-bottom: 16px;
-    color: #fff;
+    font-size: 64px; font-weight: 700;
+    line-height: 1.35; margin-bottom: 16px; color: #fff;
   }
   .news-description {
-    font-size: 44px;
-    line-height: 1.6;
-    color: #bbb;
-    margin-bottom: 20px;
+    font-size: 44px; line-height: 1.6;
+    color: #bbb; margin-bottom: 20px;
   }
-  .news-meta {
-    font-size: 32px;
-    color: #666;
-  }
+  .news-meta { font-size: 32px; color: #666; }
   .news-link {
-    display: inline-block;
-    margin-top: 16px;
-    color: #5ba8f5;
-    text-decoration: none;
-    font-size: 36px;
+    display: inline-block; margin-top: 16px;
+    color: #5ba8f5; text-decoration: none; font-size: 36px;
   }
   .news-divider {
-    width: 40px;
-    height: 2px;
-    background: rgba(255,255,255,0.1);
-    margin: 20px 0;
+    width: 40px; height: 2px;
+    background: rgba(255,255,255,0.1); margin: 20px 0;
   }
 
-  /* Footer */
   footer {
     padding: 12px 20px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -176,123 +105,48 @@
     flex-shrink: 0;
   }
   .location-info {
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
-    min-height: 28px;
+    margin-bottom: 6px; min-height: 28px;
   }
-  .location-name {
-    font-size: 18px;
-    font-weight: 600;
-  }
-  .location-time {
-    font-size: 16px;
-    color: #888;
-    font-variant-numeric: tabular-nums;
-  }
+  .location-name { font-size: 18px; font-weight: 600; }
+  .location-time { font-size: 16px; color: #888; font-variant-numeric: tabular-nums; }
   .progress-bar {
-    width: 100%;
-    height: 3px;
+    width: 100%; height: 3px;
     background: rgba(255,255,255,0.08);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 8px;
+    border-radius: 2px; overflow: hidden; margin-bottom: 8px;
   }
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #5ba8f5, #a78bfa);
-    border-radius: 2px;
-    transition: width 1s linear;
+    border-radius: 2px; transition: width 1s linear;
   }
   .controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
+    display: flex; align-items: center;
+    justify-content: center; gap: 16px;
   }
   .ctrl-btn {
-    background: rgba(255,255,255,0.08);
-    border: none;
-    color: #ccc;
-    height: 40px;
-    border-radius: 20px;
-    font-size: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-    padding: 0 20px;
-    gap: 6px;
+    background: rgba(255,255,255,0.08); border: none; color: #ccc;
+    height: 40px; border-radius: 20px; font-size: 15px;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: background 0.2s;
+    padding: 0 20px; gap: 6px;
   }
-  .ctrl-btn:active {
-    background: rgba(255,255,255,0.2);
-  }
-  .ctrl-btn.round {
-    width: 40px;
-    padding: 0;
-  }
-  .ctrl-label {
-    font-size: 14px;
-    color: #aaa;
-  }
+  .ctrl-btn:active { background: rgba(255,255,255,0.2); }
+  .ctrl-btn.round { width: 40px; padding: 0; }
 
-  /* Camera overlay */
-  .camera-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.85);
-    z-index: 4;
-    transition: opacity 0.5s;
-  }
-  .camera-overlay.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .camera-overlay-text {
-    color: #888;
-    font-size: 18px;
-    margin-top: 12px;
-  }
-  .camera-spinner {
-    width: 36px; height: 36px;
-    border: 3px solid rgba(255,255,255,0.1);
-    border-top-color: #5ba8f5;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Loading */
   .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #555;
-    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: #555; font-size: 16px;
   }
-  .loading-dot {
-    animation: blink 1.4s infinite both;
-  }
+  .loading-dot { animation: blink 1.4s infinite both; }
   .loading-dot:nth-child(2) { animation-delay: 0.2s; }
   .loading-dot:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink {
     0%, 80%, 100% { opacity: 0.2; }
     40% { opacity: 1; }
   }
-
-  /* Fade transition */
-  .fade-enter {
-    animation: fadeIn 0.5s ease;
-  }
+  .fade-enter { animation: fadeIn 0.5s ease; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -302,18 +156,14 @@
 <body>
 
 <header translate="no">
-  <div>
-    <span class="app-title">World Window</span>
-  </div>
+  <div><span class="app-title">World Window</span></div>
   <div class="mode-tabs">
     <button class="mode-tab active" data-mode="camera" onclick="switchMode('camera')">Camera</button>
     <button class="mode-tab" data-mode="news" onclick="switchMode('news')">News</button>
   </div>
 </header>
 
-<div class="content" id="content">
-  <!-- Dynamic content here -->
-</div>
+<div class="content" id="content"></div>
 
 <footer translate="no">
   <div class="location-info">
@@ -330,39 +180,33 @@
   </div>
 </footer>
 
-<script src="<https://www.youtube.com/iframe_api>"></script>
 <script>
-// ========== YT API ==========
-let ytApiReady = false;
-let ytPlayer = null;
-function onYouTubeIframeAPIReady() { ytApiReady = true; }
-
 // ========== DATA ==========
-const cameras = [
-  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UCgdHxnHSXvcAi4PaMIY1Ltg" },
-  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UCMxNcaFBLSXEhAIZKMDXbCw" },
-  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", channelId: "UC8bRCo7lGBfPsfzmIJ4bm9A" },
-  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", channelId: "UCQ2O-08tY-GeWaSxxjEKNMQ" },
-  { city: "Busan, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", videoId: "bSkAqlbkjKs" },
-  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "\u{1F1F9}\u{1F1ED}", videoId: "RRzgtJBueMk" },
-  { city: "Singapore", tz: "Asia/Singapore", flag: "\u{1F1F8}\u{1F1EC}", videoId: "M0g5HdRmFCQ" },
-  { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "\u{1F1E6}\u{1F1EA}", videoId: "5WfiTHiU6FI" },
-  { city: "London, UK", tz: "Europe/London", flag: "\u{1F1EC}\u{1F1E7}", videoId: "Zaem36S0UJQ" },
-  { city: "Paris, France", tz: "Europe/Paris", flag: "\u{1F1EB}\u{1F1F7}", videoId: "cXkFOYOlAzE" },
-  { city: "Rome, Italy", tz: "Europe/Rome", flag: "\u{1F1EE}\u{1F1F9}", videoId: "L6aCnVIePJE" },
-  { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "\u{1F1F3}\u{1F1F1}", videoId: "1Hs0dGRBEMo" },
-  { city: "Prague, Czech", tz: "Europe/Prague", flag: "\u{1F1E8}\u{1F1FF}", videoId: "GQzTVAiMhoI" },
-  { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "\u{1F1F9}\u{1F1F7}", videoId: "x6x6GnXrXhg" },
-  { city: "New York, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", channelId: "UC6qrG3W8SMK0jior2olka3g" },
-  { city: "Miami Beach, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", videoId: "VHW_sF3BKFI" },
-  { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "\u{1F1FA}\u{1F1F8}", videoId: "vCadcBR95oU" },
-  { city: "Havana, Cuba", tz: "America/Havana", flag: "\u{1F1E8}\u{1F1FA}", videoId: "jPOdsautHbo" },
-  { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "\u{1F1E6}\u{1F1F7}", videoId: "4EGhElaZeXk" },
-  { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "\u{1F1E6}\u{1F1FA}", videoId: "Y2gTSjoEExc" },
-  { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "\u{1F1F9}\u{1F1FC}", videoId: "Q8SMl0bAOqo" },
+var cameras = [
+  { city: "Shibuya, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UCgdHxnHSXvcAi4PaMIY1Ltg" },
+  { city: "Shinjuku, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UCMxNcaFBLSXEhAIZKMDXbCw" },
+  { city: "Akihabara, Tokyo", tz: "Asia/Tokyo", flag: "\u{1F1EF}\u{1F1F5}", vid: "live_stream?channel=UC8bRCo7lGBfPsfzmIJ4bm9A" },
+  { city: "Seoul, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", vid: "live_stream?channel=UCQ2O-08tY-GeWaSxxjEKNMQ" },
+  { city: "Busan, Korea", tz: "Asia/Seoul", flag: "\u{1F1F0}\u{1F1F7}", vid: "bSkAqlbkjKs" },
+  { city: "Bangkok, Thailand", tz: "Asia/Bangkok", flag: "\u{1F1F9}\u{1F1ED}", vid: "RRzgtJBueMk" },
+  { city: "Singapore", tz: "Asia/Singapore", flag: "\u{1F1F8}\u{1F1EC}", vid: "M0g5HdRmFCQ" },
+  { city: "Dubai, UAE", tz: "Asia/Dubai", flag: "\u{1F1E6}\u{1F1EA}", vid: "5WfiTHiU6FI" },
+  { city: "London, UK", tz: "Europe/London", flag: "\u{1F1EC}\u{1F1E7}", vid: "Zaem36S0UJQ" },
+  { city: "Paris, France", tz: "Europe/Paris", flag: "\u{1F1EB}\u{1F1F7}", vid: "cXkFOYOlAzE" },
+  { city: "Rome, Italy", tz: "Europe/Rome", flag: "\u{1F1EE}\u{1F1F9}", vid: "L6aCnVIePJE" },
+  { city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", flag: "\u{1F1F3}\u{1F1F1}", vid: "1Hs0dGRBEMo" },
+  { city: "Prague, Czech", tz: "Europe/Prague", flag: "\u{1F1E8}\u{1F1FF}", vid: "GQzTVAiMhoI" },
+  { city: "Istanbul, Turkey", tz: "Europe/Istanbul", flag: "\u{1F1F9}\u{1F1F7}", vid: "x6x6GnXrXhg" },
+  { city: "New York, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", vid: "live_stream?channel=UC6qrG3W8SMK0jior2olka3g" },
+  { city: "Miami Beach, USA", tz: "America/New_York", flag: "\u{1F1FA}\u{1F1F8}", vid: "VHW_sF3BKFI" },
+  { city: "Los Angeles, USA", tz: "America/Los_Angeles", flag: "\u{1F1FA}\u{1F1F8}", vid: "vCadcBR95oU" },
+  { city: "Havana, Cuba", tz: "America/Havana", flag: "\u{1F1E8}\u{1F1FA}", vid: "jPOdsautHbo" },
+  { city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", flag: "\u{1F1E6}\u{1F1F7}", vid: "4EGhElaZeXk" },
+  { city: "Sydney, Australia", tz: "Australia/Sydney", flag: "\u{1F1E6}\u{1F1FA}", vid: "Y2gTSjoEExc" },
+  { city: "Taipei, Taiwan", tz: "Asia/Taipei", flag: "\u{1F1F9}\u{1F1FC}", vid: "Q8SMl0bAOqo" }
 ];
 
-const newsFeeds = [
+var newsFeeds = [
   { name: "BBC News", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
   { name: "Reuters", country: "International", flag: "\u{1F30D}", url: "<https://feeds.reuters.com/reuters/worldNews>" },
   { name: "Al Jazeera", country: "Qatar", flag: "\u{1F1F6}\u{1F1E6}", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
@@ -372,274 +216,127 @@ const newsFeeds = [
   { name: "ABC News", country: "Australia", flag: "\u{1F1E6}\u{1F1FA}", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
   { name: "NDTV", country: "India", flag: "\u{1F1EE}\u{1F1F3}", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
   { name: "CNA", country: "Singapore", flag: "\u{1F1F8}\u{1F1EC}", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
-  { name: "The Guardian", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://www.theguardian.com/world/rss>" },
+  { name: "The Guardian", country: "UK", flag: "\u{1F1EC}\u{1F1E7}", url: "<https://www.theguardian.com/world/rss>" }
 ];
 
 // ========== STATE ==========
-let currentMode = 'camera';
-let currentIndex = 0;
-let isPaused = false;
-let progressPercent = 0;
-let shuffledCameras = [];
-let cachedNews = [];
-let newsIndex = 0;
-let cameraLoadTimer = null;
-let failedCameras = new Set();
+var currentMode = 'camera';
+var currentIndex = 0;
+var isPaused = false;
+var progressPercent = 0;
+var shuffledCameras = [];
+var cachedNews = [];
+var newsIndex = 0;
 
-const CAMERA_INTERVAL = 45;
-const NEWS_INTERVAL = 20;
-const CAMERA_LOAD_TIMEOUT = 10;
-const CAMERA_PLAY_CHECK = 6;
+var CAMERA_INTERVAL = 45;
+var NEWS_INTERVAL = 20;
 
-// ========== SHUFFLE ==========
 function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
   }
   return a;
 }
 
-// ========== CAMERA MODE ==========
-let cameraIsPlaying = false;
-let playCheckTimer = null;
-
-function skipToNextCamera() {
-  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  const camKey = cam.channelId || cam.videoId;
-  failedCameras.add(camKey);
-  console.warn('Camera failed, skipping:', cam.city);
-  cleanupCamera();
-  currentIndex = (currentIndex + 1) % shuffledCameras.length;
-  resetProgress();
-  showCamera();
-}
-
-function cleanupCamera() {
-  clearInterval(cameraLoadTimer);
-  clearTimeout(playCheckTimer);
-  cameraIsPlaying = false;
-  if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
-}
-
+// ========== CAMERA ==========
 function showCamera() {
   if (shuffledCameras.length === 0) {
     shuffledCameras = shuffle(cameras);
     currentIndex = 0;
   }
+  var cam = shuffledCameras[currentIndex % shuffledCameras.length];
+  var src = "<https://www.youtube.com/embed/>" + cam.vid + (cam.vid.indexOf("?") >= 0 ? "&" : "?") + "autoplay=1&mute=1&controls=0&playsinline=1";
 
-  const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-  const camKey = cam.channelId || cam.videoId;
-  if (failedCameras.has(camKey) && failedCameras.size < shuffledCameras.length) {
-    currentIndex = (currentIndex + 1) % shuffledCameras.length;
-    showCamera();
-    return;
-  }
+  document.getElementById('content').innerHTML =
+    '<div class="camera-container fade-enter">' +
+      '<iframe src="' + src + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>' +
+      '<div class="nav-zone nav-zone-left" onclick="goPrev()"><div class="nav-arrow">&#9664;</div></div>' +
+      '<div class="nav-zone nav-zone-right" onclick="goNext()"><div class="nav-arrow">&#9654;</div></div>' +
+    '</div>';
 
-  cleanupCamera();
-  const content = document.getElementById('content');
-
-  content.innerHTML = `
-    <div class="camera-container fade-enter">
-      <div id="ytPlayerDiv"></div>
-      <div class="camera-overlay" id="camOverlay">
-        <div class="camera-spinner"></div>
-        <div class="camera-overlay-text">Connecting...</div>
-      </div>
-      <div class="nav-zone nav-zone-left" onclick="goPrev()">
-        <div class="nav-arrow">&#9664;</div>
-      </div>
-      <div class="nav-zone nav-zone-right" onclick="goNext()">
-        <div class="nav-arrow">&#9654;</div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('locationName').textContent = `${cam.flag} ${cam.city}`;
+  document.getElementById('locationName').textContent = cam.flag + " " + cam.city;
   updateTime(cam.tz);
-
-  let countdown = CAMERA_LOAD_TIMEOUT;
-  const updateOverlayText = () => {
-    const el = document.querySelector('#camOverlay .camera-overlay-text');
-    if (el) el.textContent = `Connecting... (${countdown}s)`;
-  };
-
-  cameraLoadTimer = setInterval(() => {
-    countdown--;
-    updateOverlayText();
-    if (countdown <= 0) skipToNextCamera();
-  }, 1000);
-
-  playCheckTimer = setTimeout(() => {
-    if (!cameraIsPlaying) {
-      console.warn('Camera not playing after check, skipping:', cam.city);
-      skipToNextCamera();
-    }
-  }, CAMERA_PLAY_CHECK * 1000);
-
-  if (ytApiReady && cam.videoId) {
-    createYTPlayer(cam);
-  } else {
-    const embedSrc = cam.channelId
-      ? `<https://www.youtube.com/embed/live_stream?channel=${cam.channelId}&autoplay=1&mute=1&controls=0&playsinline=1`>
-      : `<https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1`>;
-    document.getElementById('ytPlayerDiv').outerHTML =
-      `<iframe id="camFrame" src="${embedSrc}" style="width:100%;height:100%;border:none" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-    const frame = document.getElementById('camFrame');
-    if (frame) {
-      frame.addEventListener('load', () => {
-        clearTimeout(playCheckTimer);
-        playCheckTimer = setTimeout(() => {
-          cameraIsPlaying = true;
-          clearInterval(cameraLoadTimer);
-          const overlay = document.getElementById('camOverlay');
-          if (overlay) overlay.classList.add('hidden');
-        }, 3000);
-      });
-    }
-  }
 }
-
-function createYTPlayer(cam) {
-  const opts = {
-    width: '100%',
-    height: '100%',
-    videoId: cam.videoId,
-    playerVars: {
-      autoplay: 1,
-      mute: 1,
-      controls: 0,
-      playsinline: 1,
-      rel: 0,
-      modestbranding: 1,
-    },
-    events: {
-      onReady: (e) => {
-        e.target.mute();
-        e.target.playVideo();
-      },
-      onStateChange: (e) => {
-        if (e.data === 1) {
-          cameraIsPlaying = true;
-          clearInterval(cameraLoadTimer);
-          clearTimeout(playCheckTimer);
-          const overlay = document.getElementById('camOverlay');
-          if (overlay) overlay.classList.add('hidden');
-        }
-        if (e.data === 0) {
-          console.warn('Video ended (not live):', cam.city);
-          skipToNextCamera();
-        }
-      },
-      onError: (e) => {
-        console.warn('YT error:', e.data, cam.city);
-        skipToNextCamera();
-      }
-    }
-  };
-
-  try {
-    ytPlayer = new YT.Player('ytPlayerDiv', opts);
-  } catch(e) {
-    console.warn('YT Player create failed:', e);
-    skipToNextCamera();
-  }
-}
-
-setInterval(() => { failedCameras.clear(); }, 600000);
 
 function updateTime(tz) {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-US', {
-    timeZone: tz,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  document.getElementById('locationTime').textContent = timeStr;
-}
-
-// ========== NEWS MODE ==========
-const RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
-
-async function fetchRandomNews() {
-  const feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
   try {
-    const resp = await fetch(RSS_PROXY + encodeURIComponent(feed.url));
-    const data = await resp.json();
-    if (data.status === 'ok' && data.items && data.items.length > 0) {
-      const items = data.items.map(item => ({
-        ...item,
-        feedName: feed.name,
-        feedCountry: feed.country,
-        feedFlag: feed.flag,
-      }));
-      return shuffle(items).slice(0, 5);
-    }
-  } catch (e) {
-    console.warn('Feed fetch failed:', feed.name, e);
-  }
-  return [];
+    var now = new Date();
+    var timeStr = now.toLocaleTimeString('en-US', {
+      timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    document.getElementById('locationTime').textContent = timeStr;
+  } catch(e) {}
 }
 
-async function loadNewsPool() {
-  document.getElementById('content').innerHTML = `
-    <div class="loading">
-      <span class="loading-dot">.</span>
-      <span class="loading-dot">.</span>
-      <span class="loading-dot">.</span>
-    </div>
-  `;
+// ========== NEWS ==========
+var RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
+
+function fetchRandomNews() {
+  var feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
+  return fetch(RSS_PROXY + encodeURIComponent(feed.url))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok' && data.items && data.items.length > 0) {
+        return data.items.map(function(item) {
+          item.feedName = feed.name;
+          item.feedCountry = feed.country;
+          item.feedFlag = feed.flag;
+          return item;
+        });
+      }
+      return [];
+    })
+    .catch(function() { return []; });
+}
+
+function loadNewsPool() {
+  document.getElementById('content').innerHTML =
+    '<div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div>';
   document.getElementById('locationName').textContent = 'Loading news...';
   document.getElementById('locationTime').textContent = '';
 
-  const results = await Promise.all([fetchRandomNews(), fetchRandomNews(), fetchRandomNews()]);
-  cachedNews = shuffle(results.flat());
-  newsIndex = 0;
-
-  if (cachedNews.length > 0) {
-    showNewsItem();
-  } else {
-    document.getElementById('content').innerHTML = `
-      <div class="loading">Could not load news. Try again.</div>
-    `;
-  }
+  Promise.all([fetchRandomNews(), fetchRandomNews(), fetchRandomNews()])
+    .then(function(results) {
+      cachedNews = shuffle(results[0].concat(results[1]).concat(results[2]));
+      newsIndex = 0;
+      if (cachedNews.length > 0) {
+        showNewsItem();
+      } else {
+        document.getElementById('content').innerHTML =
+          '<div class="loading">Could not load news. Try again.</div>';
+      }
+    });
 }
 
 function showNewsItem() {
   if (cachedNews.length === 0) { loadNewsPool(); return; }
+  var item = cachedNews[newsIndex % cachedNews.length];
 
-  const item = cachedNews[newsIndex % cachedNews.length];
-  const content = document.getElementById('content');
-
-  const tempDiv = document.createElement('div');
+  var tempDiv = document.createElement('div');
   tempDiv.innerHTML = item.description || '';
-  const cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
-  const truncatedDesc = cleanDesc.length > 300 ? cleanDesc.substring(0, 300) + '...' : cleanDesc;
+  var cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
+  if (cleanDesc.length > 300) cleanDesc = cleanDesc.substring(0, 300) + '...';
 
-  const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  }) : '';
+  var pubDate = '';
+  if (item.pubDate) {
+    try { pubDate = new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch(e) {}
+  }
 
-  content.innerHTML = `
-    <div class="news-container fade-enter">
-      <div class="news-source">${item.feedFlag} ${item.feedName} — ${item.feedCountry}</div>
-      <div class="news-divider"></div>
-      <h1 class="news-title">${item.title}</h1>
-      <p class="news-description">${truncatedDesc}</p>
-      <div class="news-meta">${pubDate}</div>
-      <a class="news-link" href="${<item.link>}" target="_blank" rel="noopener">Read full article</a>
-      <div class="nav-zone nav-zone-left" onclick="goPrev()">
-        <div class="nav-arrow">&#9664;</div>
-      </div>
-      <div class="nav-zone nav-zone-right" onclick="goNext()">
-        <div class="nav-arrow">&#9654;</div>
-      </div>
-    </div>
-  `;
+  document.getElementById('content').innerHTML =
+    '<div class="news-container fade-enter">' +
+      '<div class="news-source">' + item.feedFlag + ' ' + item.feedName + ' &mdash; ' + item.feedCountry + '</div>' +
+      '<div class="news-divider"></div>' +
+      '<h1 class="news-title">' + item.title + '</h1>' +
+      '<p class="news-description">' + cleanDesc + '</p>' +
+      '<div class="news-meta">' + pubDate + '</div>' +
+      '<a class="news-link" href="' + <item.link> + '" target="_blank" rel="noopener">Read full article</a>' +
+      '<div class="nav-zone nav-zone-left" onclick="goPrev()"><div class="nav-arrow">&#9664;</div></div>' +
+      '<div class="nav-zone nav-zone-right" onclick="goNext()"><div class="nav-arrow">&#9654;</div></div>' +
+    '</div>';
 
-  document.getElementById('locationName').textContent = `${item.feedFlag} ${item.feedName}`;
+  document.getElementById('locationName').textContent = item.feedFlag + ' ' + item.feedName;
   document.getElementById('locationTime').textContent = pubDate;
 }
 
@@ -672,17 +369,21 @@ function togglePause() {
   document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
 }
 
-// ========== MODE SWITCH ==========
 function switchMode(mode) {
   currentMode = mode;
-  document.querySelectorAll('.mode-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.mode === mode);
-  });
+  var tabs = document.querySelectorAll('.mode-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].getAttribute('data-mode') === mode) {
+      tabs[i].className = 'mode-tab active';
+    } else {
+      tabs[i].className = 'mode-tab';
+    }
+  }
   if (mode === 'camera') { showCamera(); } else { loadNewsPool(); }
   resetProgress();
 }
 
-// ========== PROGRESS & AUTO-ADVANCE ==========
+// ========== PROGRESS ==========
 function getInterval() {
   return currentMode === 'camera' ? CAMERA_INTERVAL : NEWS_INTERVAL;
 }
@@ -692,24 +393,20 @@ function resetProgress() {
   document.getElementById('progressFill').style.width = '0%';
 }
 
-function startTicker() {
-  setInterval(() => {
-    if (isPaused) return;
-    progressPercent += (100 / getInterval());
-    document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
-    if (progressPercent >= 100) { goNext(); }
-    if (currentMode === 'camera' && shuffledCameras.length > 0) {
-      const cam = shuffledCameras[currentIndex % shuffledCameras.length];
-      updateTime(cam.tz);
-    }
-  }, 1000);
-}
+setInterval(function() {
+  if (isPaused) return;
+  progressPercent += (100 / getInterval());
+  document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
+  if (progressPercent >= 100) { goNext(); }
+  if (currentMode === 'camera' && shuffledCameras.length > 0) {
+    var cam = shuffledCameras[currentIndex % shuffledCameras.length];
+    updateTime(cam.tz);
+  }
+}, 1000);
 
 // ========== INIT ==========
 shuffledCameras = shuffle(cameras);
 showCamera();
-startTicker();
-
 </script>
 </body>
 </html>
