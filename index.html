@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 1.01</title>
+<title>World Window Pro ver 1.02</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
@@ -75,13 +75,13 @@
   .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
   .ctrl-btn.main-next { background: #5ba8f5; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); }
 
-  /* バージョン表記のスタイル */
+  /* バージョン表記のスタイル - 位置を調整 */
   .version-tag {
     position: absolute;
-    bottom: 5px;
-    right: 15px;
+    bottom: 8px;
+    right: 40px; /* 15pxから40pxへ移動して「丸み」を回避 */
     font-size: 10px;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.4);
     pointer-events: none;
   }
 
@@ -114,24 +114,21 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 1.01</div>
+  <div class="version-tag">ver 1.02</div>
 </footer>
 
 <script>
 /**
  * ライブカメラリスト
- * type: 'channel' は、そのチャンネルで今まさにライブ配信されているものを自動取得します（IDが変わりにくい）
- * type: 'video' は特定の動画を指します（IDが変わると映らなくなります）
+ * 埋め込み制限が比較的ゆるい、公共性の高いカメラを優先して再選定しました
  */
 const cameras = [
-  { city: "渋谷スクランブル交差点, 東京", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "mN6S_4pXoXs" },
-  { city: "渋谷駅前 (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "channel", id: "UCGCZAYq5GojszU8_j8M8Skg" },
-  { city: "新宿 (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "n8V3kJBn_Es" },
-  { city: "タイムズスクエア, NY", tz: "America/New_York", flag: "🇺🇸", type: "video", id: "1-iS7LArMPA" },
-  { city: "タイムズスクエア (EarthCam)", tz: "America/New_York", flag: "🇺🇸", type: "channel", id: "UCV6mXitH-A8B99Yp2_r8mOQ" },
-  { city: "ロンドン, UK", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "Zaem36S0UJQ" },
-  { city: "ベネチア, イタリア", tz: "Europe/Rome", flag: "🇮🇹", type: "video", id: "hpYI6PInW5U" },
-  { city: "ソウル, 漢江", tz: "Asia/Seoul", flag: "🇰🇷", type: "video", id: "v_7O77x5W-I" }
+  { city: "東京都庁展望台から, 日本", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "5U1uY0zYyks" },
+  { city: "ロンドン, UK (Sky News Live)", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "9AuqUPW28s" },
+  { city: "NASA Live (宇宙ステーション)", tz: "UTC", flag: "🚀", type: "video", id: "21X5lGlDOfg" },
+  { city: "アフリカのサファリ (野生動物)", tz: "Africa/Johannesburg", flag: "🇿🇦", type: "video", id: "FvFwYfT_OTo" },
+  { city: "タイ, プーケットビーチ", tz: "Asia/Bangkok", flag: "🇹🇭", type: "video", id: "1Yf9e_8qMAs" },
+  { city: "東京 港区 (ライブカメラ)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "m6kXm_f3TfQ" }
 ];
 
 const newsFeeds = [
@@ -151,7 +148,6 @@ function showCamera() {
   
   let embedUrl = "";
   if (cam.type === "channel") {
-    // チャンネルURLを使用（より強固）
     embedUrl = `https://www.youtube.com/embed/live_stream?channel=${cam.id}&autoplay=1&mute=1&origin=${encodeURIComponent(window.location.origin)}`;
   } else {
     embedUrl = `https://www.youtube.com/embed/${cam.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&origin=${encodeURIComponent(window.location.origin)}`;
@@ -219,8 +215,10 @@ function switchMode(mode) {
 }
 
 function updateTime(tz) {
-  const timeStr = new Date().toLocaleTimeString('ja-JP', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
-  document.getElementById('locationTime').textContent = timeStr;
+  try {
+    const timeStr = new Date().toLocaleTimeString('ja-JP', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+    document.getElementById('locationTime').textContent = timeStr;
+  } catch(e) { document.getElementById('locationTime').textContent = "--:--"; }
 }
 
 function resetProgress() { progressPercent = 0; document.getElementById('progressFill').style.width = '0%'; }
