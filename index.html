@@ -241,8 +241,7 @@
 </header>
 
 <div class="content" id="content">
-  <!-- Dynamic content here -->
-</div>
+  </div>
 
 <footer translate="no">
   <div class="location-info">
@@ -286,16 +285,16 @@ const cameras = [
 ];
 
 const newsFeeds = [
-  { name: "BBC News", country: "UK", flag: "🇬🇧", url: "<https://feeds.bbci.co.uk/news/world/rss.xml>" },
-  { name: "Reuters", country: "International", flag: "🌍", url: "<https://feeds.reuters.com/reuters/worldNews>" },
-  { name: "Al Jazeera", country: "Qatar", flag: "🇶🇦", url: "<https://www.aljazeera.com/xml/rss/all.xml>" },
-  { name: "DW News", country: "Germany", flag: "🇩🇪", url: "<https://rss.dw.com/rdf/rss-en-world>" },
-  { name: "France24", country: "France", flag: "🇫🇷", url: "<https://www.france24.com/en/rss>" },
-  { name: "NHK World", country: "Japan", flag: "🇯🇵", url: "<https://www3.nhk.or.jp/rss/news/cat0.xml>" },
-  { name: "ABC News (AU)", country: "Australia", flag: "🇦🇺", url: "<https://www.abc.net.au/news/feed/2942460/rss.xml>" },
-  { name: "NDTV", country: "India", flag: "🇮🇳", url: "<https://feeds.feedburner.com/ndtvnews-world-news>" },
-  { name: "CNA", country: "Singapore", flag: "🇸🇬", url: "<https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311>" },
-  { name: "The Guardian", country: "UK", flag: "🇬🇧", url: "<https://www.theguardian.com/world/rss>" },
+  { name: "BBC News", country: "UK", flag: "🇬🇧", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
+  { name: "Reuters", country: "International", flag: "🌍", url: "https://www.reutersagency.com/feed/?best-topics=world-news&post_type=best" },
+  { name: "Al Jazeera", country: "Qatar", flag: "🇶🇦", url: "https://www.aljazeera.com/xml/rss/all.xml" },
+  { name: "DW News", country: "Germany", flag: "🇩🇪", url: "https://rss.dw.com/rdf/rss-en-world" },
+  { name: "France24", country: "France", flag: "🇫🇷", url: "https://www.france24.com/en/rss" },
+  { name: "NHK World", country: "Japan", flag: "🇯🇵", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" },
+  { name: "ABC News (AU)", country: "Australia", flag: "🇦🇺", url: "https://www.abc.net.au/news/feed/2942460/rss.xml" },
+  { name: "NDTV", country: "India", flag: "🇮🇳", url: "https://feeds.feedburner.com/ndtvnews-world-news" },
+  { name: "CNA", country: "Singapore", flag: "🇸🇬", url: "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311" },
+  { name: "The Guardian", country: "UK", flag: "🇬🇧", url: "https://www.theguardian.com/world/rss" },
 ];
 
 // ========== STATE ==========
@@ -304,7 +303,6 @@ let currentMode = 'camera';
 let currentIndex = 0;
 let isPaused = false;
 let intervalId = null;
-let progressIntervalId = null;
 let progressPercent = 0;
 let shuffledCameras = [];
 let cachedNews = [];
@@ -337,7 +335,7 @@ function showCamera() {
   content.innerHTML = `
     <div class="camera-container fade-enter">
       <iframe
-        src="<https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1>"
+        src="https://www.youtube.com/embed/${cam.videoId}?autoplay=1&mute=1&controls=0&loop=1&playsinline=1"
         allow="autoplay; encrypted-media"
         allowfullscreen>
       </iframe>
@@ -361,7 +359,7 @@ function updateTime(tz) {
 
 // ========== NEWS MODE ==========
 
-const RSS_PROXY = "<https://api.rss2json.com/v1/api.json?rss_url=>";
+const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 async function fetchRandomNews() {
   const feed = newsFeeds[Math.floor(Math.random() * newsFeeds.length)];
@@ -377,9 +375,7 @@ async function fetchRandomNews() {
         feedCountry: feed.country,
         feedFlag: feed.flag,
       }));
-      // Pick random articles from this feed
-      const shuffled = shuffle(items);
-      return shuffled.slice(0, 5);
+      return shuffle(items).slice(0, 5);
     }
   } catch (e) {
     console.warn('Feed fetch failed:', feed.name, e);
@@ -398,11 +394,9 @@ async function loadNewsPool() {
   document.getElementById('locationName').textContent = 'Loading news...';
   document.getElementById('locationTime').textContent = '';
 
-  // Fetch from 3 random feeds in parallel
   const promises = [fetchRandomNews(), fetchRandomNews(), fetchRandomNews()];
   const results = await Promise.all(promises);
-  cachedNews = results.flat();
-  cachedNews = shuffle(cachedNews);
+  cachedNews = shuffle(results.flat());
   newsIndex = 0;
 
   if (cachedNews.length > 0) {
@@ -423,7 +417,6 @@ function showNewsItem() {
   const item = cachedNews[newsIndex % cachedNews.length];
   const content = document.getElementById('content');
 
-  // Strip HTML tags from description
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = item.description || '';
   const cleanDesc = tempDiv.textContent || tempDiv.innerText || '';
@@ -440,12 +433,11 @@ function showNewsItem() {
       <h1 class="news-title">${item.title}</h1>
       <p class="news-description">${truncatedDesc}</p>
       <div class="news-meta">${pubDate}</div>
-      <a class="news-link" href="${<item.link>}" target="_blank" rel="noopener">Read full article →</a>
+      <a class="news-link" href="${item.link}" target="_blank" rel="noopener">Read full article →</a>
     </div>
   `;
 
-  document.getElementById('locationName').textContent =
-    `${item.feedFlag} ${item.feedName}`;
+  document.getElementById('locationName').textContent = `${item.feedFlag} ${item.feedName}`;
   document.getElementById('locationTime').textContent = pubDate;
 }
 
@@ -514,14 +506,12 @@ function startTicker() {
     if (isPaused) return;
 
     progressPercent += (100 / getInterval());
-    document.getElementById('progressFill').style.width =
-      Math.min(progressPercent, 100) + '%';
+    document.getElementById('progressFill').style.width = Math.min(progressPercent, 100) + '%';
 
     if (progressPercent >= 100) {
       goNext();
     }
 
-    // Update clock for camera mode
     if (currentMode === 'camera' && shuffledCameras.length > 0) {
       const cam = shuffledCameras[currentIndex % shuffledCameras.length];
       updateTime(cam.tz);
