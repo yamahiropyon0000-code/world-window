@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.04</title>
+<title>World Window Pro ver 2.05</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -12,7 +12,7 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 背景：高画質写真を引き立てる */
+  /* 背景：transitionを削除して「ポンポン」切り替わるように変更 */
   #bgContainer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover; background-position: center;
@@ -20,7 +20,7 @@
   }
   #bgOverlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.2); z-index: 2; /* 写真重視のため少し薄く */
+    background: rgba(0, 0, 0, 0.25); z-index: 2;
   }
 
   header, footer { position: relative; z-index: 100; flex-shrink: 0; }
@@ -28,6 +28,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 15px 25px; background: rgba(10, 10, 20, 0.7); backdrop-filter: blur(20px);
   }
+  .app-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
   .mode-tabs { display: flex; gap: 8px; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; }
   .mode-tab {
     padding: 10px 20px; border-radius: 8px; border: none; background: transparent;
@@ -48,11 +49,10 @@
   }
   .location-name { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
   
-  /* 進捗バー：linear（線形）アニメーションで滑らかに */
   .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 30px; overflow: hidden; }
   #progressFill { 
     height: 100%; background: linear-gradient(90deg, #5ba8f5, #a78bfa); width: 0%; 
-    transition: width 1s linear; /* ここで1秒かけて滑らかに移動させる */
+    transition: width 1s linear; /* 滑らかなアニメーション */
   }
 
   .controls { display: flex; align-items: center; justify-content: center; gap: 60px; }
@@ -72,7 +72,7 @@
 <div id="bgOverlay"></div>
 
 <header translate="no">
-  <span style="font-size:22px; font-weight:800; letter-spacing:1px;">World Window</span>
+  <span class="app-title">World Window</span>
   <div class="mode-tabs">
     <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')">Photo</button>
     <button class="mode-tab" id="tabNews" onclick="switchMode('news')">News</button>
@@ -93,44 +93,41 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" style="background:#5ba8f5;" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.04</div>
+  <div class="version-tag">ver 2.05</div>
 </footer>
 
 <script>
 let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 
-// プロフォトグラファーによる厳選高画質リスト (Unsplash IDs)
+// プロフォトグラファー厳選の高画質Unsplash写真リスト（IDを修正）
 const photoList = [
-  { name: "Shinjuku, Tokyo", id: "Uu1E9yEku84" },
-  { name: "Manhattan, New York", id: "6S6f88L1SXM" },
-  { name: "Swiss Alps", id: "A_S9W4S07Cg" },
-  { name: "Santorini, Greece", id: "hmI969O6L_E" },
-  { name: "Venice, Italy", id: "9_39pIvuN1w" },
-  { name: "Paris, France", id: "nnzkZNYWHaU" },
-  { name: "Mount Fuji, Japan", id: "SST_D3-C8xY" },
-  { name: "London, UK", id: "Oja2ty_9ZLM" },
-  { name: "Banff, Canada", id: "p0_3VvNf8i8" }
+  { name: "Shinjuku, Tokyo", id: "photo-1540959733332-e94e270b2d42" },
+  { name: "Manhattan, New York", id: "photo-1496442226666-8d4d0e62e6e9" },
+  { name: "Swiss Alps", id: "photo-1531315630204-8c5299b41280" },
+  { name: "Santorini, Greece", id: "photo-1570077188670-e3a8d69ac5ff" },
+  { name: "Venice, Italy", id: "photo-1514890547357-a9ee2887ad8e" },
+  { name: "Paris, France", id: "photo-1502602898657-3e91760cbb34" },
+  { name: "Mount Fuji, Japan", id: "photo-1493976040374-85c8e12f0c0e" },
+  { name: "London, UK", id: "photo-1513635269975-59663e0ac1ad" },
+  { name: "Banff, Canada", id: "photo-1464822759023-fed622ff2c3b" }
 ];
 
 function showPhoto() {
   const photo = photoList[currentIndex % photoList.length];
   const bg = document.getElementById('bgContainer');
   
-  // 解像度を指定 (w=1600) して高品質な画像を直接取得
-  const imgUrl = `https://images.unsplash.com/photo-${photo.id}?auto=format&fit=crop&w=1600&q=80`;
+  // URL形式を完全に修正：https://images.unsplash.com/[ID]
+  const imgUrl = `https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=1600&q=80`;
   
-  // 文字を書き換え
   document.getElementById('locationName').textContent = photo.name;
   
-  // 背景を更新（画像が届くまでは前の画像を表示し続ける）
-  const img = new Image();
-  img.onload = () => { bg.style.backgroundImage = `url('${imgUrl}')`; };
-  img.src = imgUrl;
+  // 「ポンポン」切り替えるため、読み込み完了を待たずに即時セット
+  bg.style.backgroundImage = `url('${imgUrl}')`;
 }
 
 function goNext() {
-  updateProgress(0); // バーをリセット
+  updateProgress(0); 
   if (currentMode === 'photo') { currentIndex++; showPhoto(); }
   else { newsIndex++; showNewsItem(); }
 }
@@ -144,7 +141,6 @@ function goPrev() {
 function updateProgress(val) {
   progress = val;
   const fill = document.getElementById('progressFill');
-  // 0にリセットするときだけアニメーションをオフにする
   fill.style.transition = val === 0 ? 'none' : 'width 1s linear';
   fill.style.width = val + '%';
 }
@@ -163,7 +159,6 @@ function showNewsItem() {
     <h1 style="font-size:clamp(32px, 5vw, 60px); font-weight:800; line-height:1.2;">${item.title}</h1>
     <p style="font-size:clamp(18px, 3vw, 32px); line-height:1.6; color:#ccc; margin-top:30px;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
   `;
-  document.getElementById('locationName').textContent = "World News Report";
 }
 
 function switchMode(mode) {
@@ -184,13 +179,14 @@ setInterval(() => {
   if (isPaused) return;
   const limit = (currentMode === 'photo' ? 45 : 25);
   let nextProgress = progress + (100 / limit);
-  if (nextProgress >= 105) { // 少し余裕を持って切り替え
+  if (nextProgress >= 105) { 
     goNext();
   } else {
     updateProgress(nextProgress);
   }
 }, 1000);
 
+// 初回起動
 showPhoto();
 </script>
 </body>
