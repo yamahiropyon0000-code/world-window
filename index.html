@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro - Stable</title>
+<title>World Window Pro ver 1.01</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
@@ -38,7 +38,6 @@
   .mode-tab.active { background: #fff; color: #000; }
 
   .content { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; flex-direction: column; }
-
   .camera-container { width: 100%; height: 100%; }
   .camera-container iframe { width: 100%; height: 100%; border: none; }
 
@@ -58,6 +57,7 @@
     background: #121225;
     border-top: 1px solid rgba(255,255,255,0.15);
     z-index: 100;
+    position: relative;
   }
   .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; }
   .location-name { font-size: 20px; font-weight: 700; color: #fff; }
@@ -67,24 +67,23 @@
   .progress-fill { height: 100%; background: #5ba8f5; transition: width 1s linear; }
 
   .controls { display: flex; align-items: center; justify-content: center; gap: 45px; }
-  
-  /* ボタンサイズを70pxで統一 */
   .ctrl-btn {
-    background: rgba(255,255,255,0.15); 
-    border: none; 
-    color: #fff;
-    width: 70px; 
-    height: 70px; 
-    border-radius: 50%; 
-    font-size: 28px;
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    transition: 0.2s;
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    width: 70px; height: 70px; border-radius: 50%; font-size: 28px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
   }
   .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
   .ctrl-btn.main-next { background: #5ba8f5; box-shadow: 0 4px 15px rgba(91, 168, 245, 0.3); }
+
+  /* バージョン表記のスタイル */
+  .version-tag {
+    position: absolute;
+    bottom: 5px;
+    right: 15px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+  }
 
   .fade-enter { animation: fadeIn 0.6s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -115,21 +114,24 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
+  <div class="version-tag">ver 1.01</div>
 </footer>
 
 <script>
 /**
  * ライブカメラリスト
- * type: 'video' (特定の動画ID) または 'channel' (チャンネルの最新ライブを自動取得)
- * 2026年3月現在、埋め込み許可が比較的安定しているものを厳選しています
+ * type: 'channel' は、そのチャンネルで今まさにライブ配信されているものを自動取得します（IDが変わりにくい）
+ * type: 'video' は特定の動画を指します（IDが変わると映らなくなります）
  */
 const cameras = [
   { city: "渋谷スクランブル交差点, 東京", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "mN6S_4pXoXs" },
+  { city: "渋谷駅前 (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "channel", id: "UCGCZAYq5GojszU8_j8M8Skg" },
+  { city: "新宿 (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "video", id: "n8V3kJBn_Es" },
   { city: "タイムズスクエア, NY", tz: "America/New_York", flag: "🇺🇸", type: "video", id: "1-iS7LArMPA" },
-  { city: "ロンドン, タワーブリッジ", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "Zaem36S0UJQ" },
+  { city: "タイムズスクエア (EarthCam)", tz: "America/New_York", flag: "🇺🇸", type: "channel", id: "UCV6mXitH-A8B99Yp2_r8mOQ" },
+  { city: "ロンドン, UK", tz: "Europe/London", flag: "🇬🇧", type: "video", id: "Zaem36S0UJQ" },
   { city: "ベネチア, イタリア", tz: "Europe/Rome", flag: "🇮🇹", type: "video", id: "hpYI6PInW5U" },
-  { city: "ソウル, 漢江", tz: "Asia/Seoul", flag: "🇰🇷", type: "video", id: "v_7O77x5W-I" },
-  { city: "ライブニュース (ANN)", tz: "Asia/Tokyo", flag: "🇯🇵", type: "channel", id: "UCGCZAYq5GojszU8_j8M8Skg" }
+  { city: "ソウル, 漢江", tz: "Asia/Seoul", flag: "🇰🇷", type: "video", id: "v_7O77x5W-I" }
 ];
 
 const newsFeeds = [
@@ -147,12 +149,12 @@ function showCamera() {
   if (!shuffledCameras.length) shuffledCameras = shuffle(cameras);
   const cam = shuffledCameras[currentIndex % shuffledCameras.length];
   
-  // 埋め込み用URLの構築 (originを追加して安定性を向上)
   let embedUrl = "";
   if (cam.type === "channel") {
-    embedUrl = `https://www.youtube.com/embed/live_stream?channel=${cam.id}&autoplay=1&mute=1&origin=${window.location.origin}`;
+    // チャンネルURLを使用（より強固）
+    embedUrl = `https://www.youtube.com/embed/live_stream?channel=${cam.id}&autoplay=1&mute=1&origin=${encodeURIComponent(window.location.origin)}`;
   } else {
-    embedUrl = `https://www.youtube.com/embed/${cam.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&origin=${window.location.origin}`;
+    embedUrl = `https://www.youtube.com/embed/${cam.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&origin=${encodeURIComponent(window.location.origin)}`;
   }
 
   document.getElementById('content').innerHTML = `
