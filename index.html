@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.32</title>
+<title>World Window Pro ver 3.0</title>
 <style>
-  /* 赤背景を根絶。redという文字列すら排除 */
   * { margin: 0; padding: 0; box-sizing: border-box; background-color: transparent; }
   html, body {
     background-color: #000000 !important; color: #e0e0e0;
@@ -13,7 +12,6 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 開始画面 */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #000 !important; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -23,6 +21,7 @@
     padding: 22px 60px; background-color: #5ba8f5 !important; color: #fff !important;
     border-radius: 50px; font-size: 24px; font-weight: 800; border: none;
   }
+  .start-sub { color: #555; font-size: 14px; margin-top: 16px; }
 
   header, footer { position: relative; z-index: 100; flex-shrink: 0; background-color: #0a0a0a !important; }
   header { display: flex; align-items: center; justify-content: space-between; padding: 15px 25px; border-bottom: 1px solid #1a1a1a; }
@@ -31,7 +30,6 @@
   .mode-tab { padding: 8px 18px; border-radius: 7px; border: none; color: #888; font-size: 14px; font-weight: 600; cursor: pointer; }
   .mode-tab.active { background-color: #fff !important; color: #000 !important; }
 
-  /* メインビュー */
   .content { 
     flex: 1; position: relative; overflow: hidden; background-color: #000000 !important;
     background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center;
@@ -47,23 +45,24 @@
 
   footer { padding: 25px 40px; padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px)); border-top: 1px solid #1a1a1a; }
   .location-name { font-size: 26px; font-weight: 800; color: #fff; min-height: 1.2em; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-  
+
   .progress-bar { width: 100%; height: 6px; background-color: #1a1a1a !important; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
   #progressFill { height: 100%; background: #5ba8f5 !important; width: 0%; transition: width 0.1s linear; }
 
-  /* ボタン配置の変更 I<  Play  >I */
   .controls { display: flex; align-items: center; justify-content: center; gap: 40px; }
   .ctrl-btn { background-color: #222 !important; border: none; color: #ffffff !important; width: 65px; height: 65px; border-radius: 50%; font-size: 26px; display: flex; align-items: center; justify-content: center; }
   .play-pause-btn { width: 85px; height: 85px; font-size: 34px; background-color: #5ba8f5 !important; }
 
-  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; }
+  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; text-align: center; }
   .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
+  .photo-count { position: absolute; bottom: 8px; left: 40px; font-size: 10px; color: #333; }
 </style>
 </head>
 <body>
 
 <div id="startOverlay" onclick="initApp()">
   <button class="start-btn">旅を開始する</button>
+  <p class="start-sub">世界90箇所以上の名所を巡ります</p>
 </div>
 
 <header translate="no">
@@ -89,28 +88,123 @@
     <button class="ctrl-btn play-pause-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
-  <div class="version-tag">ver 2.32</div>
+  <span class="photo-count" id="photoCount"></span>
+  <div class="version-tag">ver 3.0</div>
 </footer>
 
 <script>
 let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 let nextImage = new Image(), nextReady = false;
+let loadedPhotos = [];
 
-// 確実な高品質IDリスト（150枚以上あっても同様の形式で追加可能）
+// ====== 世界90箇所以上：Wikipedia記事タイトルで写真を自動取得 ======
 const locations = [
-  { c: "フランス", t: "パリ", s: "エッフェル塔", y: "1889", id: "nnzkZNYWHaU" },
-  { c: "日本", t: "東京", s: "渋谷スクランブル交差点", y: "2024", id: "Uu1E9yEku84" },
-  { c: "イギリス", t: "ロンドン", s: "ビッグ・ベン", y: "2023", id: "Oja2ty_9ZLM" },
-  { c: "アメリカ", t: "ニューヨーク", s: "タイムズスクエア", y: "1950", id: "6S6f88L1SXM" },
-  { c: "イタリア", t: "ベネチア", s: "サン・マルコ広場", y: "2022", id: "9_39pIvuN1w" },
-  { c: "日本", t: "京都", s: "伏見稲荷大社", y: "2024", id: "SST_D3-C8xY" },
-  { c: "イタリア", t: "ローマ", s: "コロッセオ", y: "1930", id: "hmI969O6L_E" },
-  { c: "UAE", t: "ドバイ", s: "ブルジュ・ハリファ", y: "2024", id: "p0_3VvNf8i8" },
-  { c: "シンガポール", s: "マリーナベイ・サンズ", y: "2024", id: "1528673327342-e130ae04b86d" },
-  { c: "アメリカ", t: "サンフランシスコ", s: "ゴールデンゲートブリッジ", y: "1937", id: "1449034440478-56d70c2a52ac" },
-  { c: "エジプト", t: "ギザ", s: "ピラミッド", y: "1920", id: "1554652251-27715423f03b" },
-  { c: "ギリシャ", t: "サントリーニ島", s: "イアの街並み", y: "2024", id: "1570077188670-e3a8d69ac5ff" }
+  // ── アジア ──
+  { c: "日本", t: "東京", s: "東京タワー", w: "Tokyo_Tower" },
+  { c: "日本", t: "京都", s: "金閣寺", w: "Kinkaku-ji" },
+  { c: "日本", t: "京都", s: "伏見稲荷大社", w: "Fushimi_Inari-taisha" },
+  { c: "日本", t: "広島", s: "厳島神社", w: "Itsukushima_Shrine" },
+  { c: "日本", t: "富士山", s: "富士山", w: "Mount_Fuji" },
+  { c: "日本", t: "大阪", s: "大阪城", w: "Osaka_Castle" },
+  { c: "日本", t: "姫路", s: "姫路城", w: "Himeji_Castle" },
+  { c: "日本", t: "奈良", s: "東大寺", w: "Todai-ji" },
+  { c: "中国", t: "北京", s: "万里の長城", w: "Great_Wall_of_China" },
+  { c: "中国", t: "北京", s: "紫禁城", w: "Forbidden_City" },
+  { c: "中国", t: "上海", s: "外灘", w: "The_Bund" },
+  { c: "中国", t: "西安", s: "兵馬俑", w: "Terracotta_Army" },
+  { c: "中国", t: "桂林", s: "漓江", w: "Li_River_(Guangxi)" },
+  { c: "インド", t: "アーグラ", s: "タージ・マハル", w: "Taj_Mahal" },
+  { c: "インド", t: "ジャイプル", s: "ハワー・マハル", w: "Hawa_Mahal" },
+  { c: "インド", t: "バラナシ", s: "ガンジス川", w: "Varanasi" },
+  { c: "タイ", t: "バンコク", s: "ワット・アルン", w: "Wat_Arun" },
+  { c: "タイ", t: "アユタヤ", s: "ワット・マハタート", w: "Wat_Mahathat" },
+  { c: "カンボジア", t: "シェムリアップ", s: "アンコール・ワット", w: "Angkor_Wat" },
+  { c: "ベトナム", t: "ハロン湾", s: "ハロン湾", w: "Ha_Long_Bay" },
+  { c: "インドネシア", t: "バリ島", s: "タナロット寺院", w: "Tanah_Lot" },
+  { c: "インドネシア", t: "ジャワ島", s: "ボロブドゥール", w: "Borobudur" },
+  { c: "ミャンマー", t: "バガン", s: "バガン遺跡群", w: "Bagan" },
+  { c: "ネパール", t: "ヒマラヤ", s: "エベレスト", w: "Mount_Everest" },
+  { c: "韓国", t: "ソウル", s: "景福宮", w: "Gyeongbokgung" },
+  { c: "スリランカ", t: "シーギリヤ", s: "シーギリヤ・ロック", w: "Sigiriya" },
+
+  // ── ヨーロッパ ──
+  { c: "フランス", t: "パリ", s: "エッフェル塔", w: "Eiffel_Tower" },
+  { c: "フランス", t: "パリ", s: "ノートルダム大聖堂", w: "Notre-Dame_de_Paris" },
+  { c: "フランス", t: "ノルマンディー", s: "モン・サン＝ミシェル", w: "Mont-Saint-Michel" },
+  { c: "イタリア", t: "ローマ", s: "コロッセオ", w: "Colosseum" },
+  { c: "イタリア", t: "ベネチア", s: "大運河", w: "Grand_Canal_(Venice)" },
+  { c: "イタリア", t: "フィレンツェ", s: "大聖堂", w: "Florence_Cathedral" },
+  { c: "イタリア", t: "ピサ", s: "ピサの斜塔", w: "Leaning_Tower_of_Pisa" },
+  { c: "イタリア", t: "アマルフィ", s: "アマルフィ海岸", w: "Amalfi_Coast" },
+  { c: "スペイン", t: "バルセロナ", s: "サグラダ・ファミリア", w: "Sagrada_Fam%C3%ADlia" },
+  { c: "スペイン", t: "グラナダ", s: "アルハンブラ宮殿", w: "Alhambra" },
+  { c: "イギリス", t: "ロンドン", s: "ビッグ・ベン", w: "Big_Ben" },
+  { c: "イギリス", t: "ロンドン", s: "タワーブリッジ", w: "Tower_Bridge" },
+  { c: "イギリス", t: "ソールズベリー", s: "ストーンヘンジ", w: "Stonehenge" },
+  { c: "ギリシャ", t: "アテネ", s: "パルテノン神殿", w: "Parthenon" },
+  { c: "ギリシャ", t: "サントリーニ島", s: "サントリーニ", w: "Santorini" },
+  { c: "ギリシャ", t: "メテオラ", s: "メテオラ修道院", w: "Meteora" },
+  { c: "ドイツ", t: "バイエルン", s: "ノイシュヴァンシュタイン城", w: "Neuschwanstein_Castle" },
+  { c: "ドイツ", t: "ケルン", s: "ケルン大聖堂", w: "Cologne_Cathedral" },
+  { c: "チェコ", t: "プラハ", s: "カレル橋", w: "Charles_Bridge" },
+  { c: "ノルウェー", t: "フィヨルド", s: "ガイランゲルフィヨルド", w: "Geirangerfjord" },
+  { c: "ノルウェー", t: "ロフォーテン", s: "ロフォーテン諸島", w: "Lofoten" },
+  { c: "アイスランド", t: "南部", s: "セリャラントスフォス", w: "Seljalandsfoss" },
+  { c: "スイス", t: "ツェルマット", s: "マッターホルン", w: "Matterhorn" },
+  { c: "オーストリア", t: "ハルシュタット", s: "ハルシュタット湖畔", w: "Hallstatt" },
+  { c: "クロアチア", t: "ドゥブロヴニク", s: "旧市街", w: "Dubrovnik" },
+  { c: "クロアチア", t: "プリトヴィツェ", s: "プリトヴィツェ湖群", w: "Plitvice_Lakes_National_Park" },
+  { c: "ハンガリー", t: "ブダペスト", s: "国会議事堂", w: "Hungarian_Parliament_Building" },
+  { c: "ポルトガル", t: "リスボン", s: "ベレンの塔", w: "Bel%C3%A9m_Tower" },
+  { c: "スコットランド", t: "ハイランド", s: "スコットランド高地", w: "Scottish_Highlands" },
+  { c: "トルコ", t: "カッパドキア", s: "カッパドキア", w: "Cappadocia" },
+  { c: "トルコ", t: "イスタンブール", s: "アヤソフィア", w: "Hagia_Sophia" },
+  { c: "ロシア", t: "モスクワ", s: "聖ワシリイ大聖堂", w: "Saint_Basil%27s_Cathedral" },
+
+  // ── アメリカ大陸 ──
+  { c: "アメリカ", t: "ニューヨーク", s: "自由の女神", w: "Statue_of_Liberty" },
+  { c: "アメリカ", t: "アリゾナ", s: "グランドキャニオン", w: "Grand_Canyon" },
+  { c: "アメリカ", t: "サンフランシスコ", s: "ゴールデンゲートブリッジ", w: "Golden_Gate_Bridge" },
+  { c: "アメリカ", t: "ワイオミング", s: "イエローストーン", w: "Yellowstone_National_Park" },
+  { c: "アメリカ", t: "ユタ", s: "モニュメントバレー", w: "Monument_Valley" },
+  { c: "アメリカ", t: "ハワイ", s: "ワイキキビーチ", w: "Waikiki" },
+  { c: "アメリカ", t: "カリフォルニア", s: "ヨセミテ渓谷", w: "Yosemite_Valley" },
+  { c: "カナダ", t: "オンタリオ", s: "ナイアガラの滝", w: "Niagara_Falls" },
+  { c: "カナダ", t: "アルバータ", s: "モレーン湖", w: "Moraine_Lake" },
+  { c: "カナダ", t: "バンフ", s: "バンフ国立公園", w: "Banff_National_Park" },
+  { c: "ブラジル", t: "リオ", s: "コルコバードのキリスト像", w: "Christ_the_Redeemer_(statue)" },
+  { c: "ブラジル", t: "パラナ", s: "イグアスの滝", w: "Iguazu_Falls" },
+  { c: "ペルー", t: "クスコ", s: "マチュ・ピチュ", w: "Machu_Picchu" },
+  { c: "メキシコ", t: "ユカタン", s: "チチェン・イッツァ", w: "Chichen_Itza" },
+  { c: "アルゼンチン", t: "パタゴニア", s: "ペリト・モレノ氷河", w: "Perito_Moreno_Glacier" },
+  { c: "ボリビア", t: "ウユニ", s: "ウユニ塩湖", w: "Salar_de_Uyuni" },
+  { c: "チリ", t: "イースター島", s: "モアイ像", w: "Moai" },
+
+  // ── アフリカ ──
+  { c: "エジプト", t: "ギザ", s: "大ピラミッド", w: "Great_Pyramid_of_Giza" },
+  { c: "エジプト", t: "ルクソール", s: "カルナック神殿", w: "Karnak" },
+  { c: "モロッコ", t: "マラケシュ", s: "ジャマ・エル・フナ広場", w: "Jemaa_el-Fnaa" },
+  { c: "モロッコ", t: "シャウエン", s: "青い街", w: "Chefchaouen" },
+  { c: "タンザニア", t: "セレンゲティ", s: "セレンゲティ国立公園", w: "Serengeti" },
+  { c: "タンザニア", t: "キリマンジャロ", s: "キリマンジャロ山", w: "Mount_Kilimanjaro" },
+  { c: "南アフリカ", t: "ケープタウン", s: "テーブルマウンテン", w: "Table_Mountain" },
+  { c: "ナミビア", t: "ナミブ砂漠", s: "デッドフレイ", w: "Deadvlei" },
+  { c: "エチオピア", t: "ラリベラ", s: "岩窟教会群", w: "Lalibela" },
+  { c: "ジンバブエ", t: "ヴィクトリアの滝", s: "ヴィクトリアの滝", w: "Victoria_Falls" },
+  { c: "マダガスカル", t: "ツィンギー", s: "ツィンギ・デ・ベマラ", w: "Tsingy_de_Bemaraha_Strict_Nature_Reserve" },
+
+  // ── 中東 ──
+  { c: "UAE", t: "ドバイ", s: "ブルジュ・ハリファ", w: "Burj_Khalifa" },
+  { c: "ヨルダン", t: "ペトラ", s: "ペトラ遺跡", w: "Petra" },
+  { c: "イスラエル", t: "エルサレム", s: "岩のドーム", w: "Dome_of_the_Rock" },
+
+  // ── オセアニア ──
+  { c: "オーストラリア", t: "シドニー", s: "オペラハウス", w: "Sydney_Opera_House" },
+  { c: "オーストラリア", t: "ウルル", s: "エアーズロック", w: "Uluru" },
+  { c: "オーストラリア", t: "クイーンズランド", s: "グレートバリアリーフ", w: "Great_Barrier_Reef" },
+  { c: "ニュージーランド", t: "ミルフォード", s: "ミルフォード・サウンド", w: "Milford_Sound" },
+  { c: "ニュージーランド", t: "トンガリロ", s: "トンガリロ国立公園", w: "Tongariro_National_Park" },
 ];
 
 function shuffle(array) {
@@ -124,68 +218,117 @@ function formatCaption(loc) {
   if (!loc) return "";
   let p = [];
   if (loc.c) p.push(loc.c);
-  // 国名と都市名が同じ場合は重複を排除
   if (loc.t && loc.t !== loc.c) p.push(loc.t);
   if (loc.s) p.push(loc.s);
-  let res = p.join(" / ");
-  if (loc.y) res += ` / ${loc.y}`; // 年代情報を追加
-  return res;
+  return p.join(" / ");
 }
 
-function getUnsplashUrl(id) {
-  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=80`;
-}
+// ====== Wikipedia API で写真URL一括取得 ======
+async function fetchWikiImages(entries) {
+  const batchSize = 50;
+  for (let i = 0; i < entries.length; i += batchSize) {
+    const batch = entries.slice(i, i + batchSize);
+    const titles = batch.map(e => decodeURIComponent(e.w)).join('|');
+    try {
+      const url = `https://<en.wikipedia.org/w/api.php?action=query&titles=$>{encodeURIComponent(titles).replace(/%7C/g, '|')}&prop=pageimages&format=json&pithumbsize=1600&origin=*`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.query || !data.query.pages) continue;
 
-function initApp() {
-  document.getElementById('startOverlay').style.display = 'none';
-  shuffle(locations);
-  currentIndex = 0;
-  loadInitialPhoto();
-  startTicker();
-}
+      const normMap = {};
+      if (data.query.normalized) {
+        data.query.normalized.forEach(n => { normMap[<n.to>] = n.from; });
+      }
 
-function loadInitialPhoto() {
-  const loc = locations[currentIndex % locations.length];
-  const url = getUnsplashUrl(loc.id);
-  const temp = new Image();
-  temp.onload = () => {
-    document.getElementById('mainView').style.backgroundImage = `url('${url}')`;
-    document.getElementById('locationName').textContent = formatCaption(loc);
-    preloadNext();
-  };
-  temp.src = url;
-}
-
-// バーが伸びている間に次の画像を裏側で読み込む
-function preloadNext() {
-  nextReady = false;
-  const nl = locations[(currentIndex + 1) % locations.length];
-  nextImage = new Image();
-  nextImage.onload = () => { nextReady = true; };
-  nextImage.src = getUnsplashUrl(nl.id);
-}
-
-// 自動切り替え：バーが満タンになり、かつ準備完了なら即座に移行
-function attemptAutoNext() {
-  if (currentMode === 'news') { newsIndex++; showNewsItem(); progress = 0; return; }
-  
-  if (nextReady) {
-    currentIndex++;
-    const loc = locations[currentIndex % locations.length];
-    document.getElementById('mainView').style.backgroundImage = `url('${nextImage.src}')`;
-    document.getElementById('locationName').textContent = formatCaption(loc);
-    progress = 0;
-    preloadNext(); // 次の読み込みを開始
+      const pages = data.query.pages;
+      for (const pageId in pages) {
+        const page = pages[pageId];
+        if (!page.thumbnail) continue;
+        const imgUrl = page.thumbnail.source;
+        const pageTitle = page.title;
+        const origTitle = normMap[pageTitle] || pageTitle;
+        batch.forEach(entry => {
+          const decoded = decodeURIComponent(entry.w).replace(/_/g, ' ');
+          if (decoded === pageTitle || decoded === origTitle ||
+              entry.w.replace(/_/g, ' ') === pageTitle) {
+            entry.imgUrl = imgUrl;
+          }
+        });
+      }
+    } catch(e) {
+      console.warn('Wiki API batch failed:', e);
+    }
   }
 }
 
-// 手動切り替え（＞I）：即座に黒画面にし、バーを一時停止
+async function initApp() {
+  const overlay = document.getElementById('startOverlay');
+  overlay.querySelector('.start-btn').textContent = '写真を収集中...';
+  overlay.querySelector('.start-btn').style.opacity = '0.6';
+  overlay.style.cursor = 'default';
+  overlay.onclick = null;
+
+  await fetchWikiImages(locations);
+
+  loadedPhotos = locations.filter(e => e.imgUrl);
+  shuffle(loadedPhotos);
+  currentIndex = 0;
+
+  overlay.style.display = 'none';
+  updatePhotoCount();
+
+  if (loadedPhotos.length > 0) {
+    showCurrentPhoto();
+    preloadNext();
+  } else {
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('loader').textContent = '写真の取得に失敗しました';
+  }
+  startTicker();
+}
+
+function showCurrentPhoto() {
+  if (loadedPhotos.length === 0) return;
+  const loc = loadedPhotos[currentIndex % loadedPhotos.length];
+  document.getElementById('mainView').style.backgroundImage = `url('${loc.imgUrl}')`;
+  document.getElementById('locationName').textContent = formatCaption(loc);
+  updatePhotoCount();
+}
+
+function updatePhotoCount() {
+  if (loadedPhotos.length > 0) {
+    document.getElementById('photoCount').textContent = `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`;
+  }
+}
+
+function preloadNext() {
+  nextReady = false;
+  if (loadedPhotos.length === 0) return;
+  const nl = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
+  if (!nl || !nl.imgUrl) { nextReady = true; return; }
+  nextImage = new Image();
+  nextImage.onload = () => { nextReady = true; };
+  nextImage.onerror = () => { nextReady = true; };
+  nextImage.src = nl.imgUrl;
+}
+
+function attemptAutoNext() {
+  if (currentMode === 'news') { newsIndex++; showNewsItem(); progress = 0; return; }
+  if (nextReady && loadedPhotos.length > 0) {
+    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    showCurrentPhoto();
+    progress = 0;
+    preloadNext();
+  }
+}
+
 function manualNext() {
-  isPaused = true; 
+  if (currentMode === 'news') { newsIndex++; showNewsItem(); progress = 0; return; }
+  if (loadedPhotos.length === 0) return;
+
+  isPaused = true;
   progress = 0;
   document.getElementById('progressFill').style.width = '0%';
-  
-  if (currentMode === 'news') { newsIndex++; showNewsItem(); isPaused = false; return; }
 
   const mv = document.getElementById('mainView');
   const nl = document.getElementById('locationName');
@@ -195,26 +338,34 @@ function manualNext() {
   nl.textContent = '';
   ld.style.display = 'block';
 
-  currentIndex++;
-  const loc = locations[currentIndex % locations.length];
-  const url = getUnsplashUrl(loc.id);
+  currentIndex = (currentIndex + 1) % loadedPhotos.length;
+  const loc = loadedPhotos[currentIndex];
+
   const temp = new Image();
   temp.onload = () => {
     ld.style.display = 'none';
-    mv.style.backgroundImage = `url('${url}')`;
-    nl.textContent = formatCaption(loc);
+    showCurrentPhoto();
     isPaused = false;
     updatePauseIcon();
     preloadNext();
   };
-  temp.src = url;
+  temp.onerror = () => {
+    ld.style.display = 'none';
+    isPaused = false;
+    manualNext();
+  };
+  temp.src = loc.imgUrl;
 }
 
-function manualPrev() { currentIndex = (currentIndex - 1 + locations.length) % locations.length; manualNext(); }
+function manualPrev() {
+  if (loadedPhotos.length === 0) return;
+  currentIndex = (currentIndex - 2 + loadedPhotos.length) % loadedPhotos.length;
+  manualNext();
+}
 
 async function loadNews() {
   try {
-    const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
+    const res = await fetch("<https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml>");
     const data = await res.json();
     cachedNews = data.items;
     showNewsItem();
@@ -227,7 +378,7 @@ function showNewsItem() {
   document.getElementById('newsContent').innerHTML = `
     <h1 class="news-title">${item.title}</h1>
     <p style="font-size:24px; line-height:1.6; color:#cccccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
-    <a href="${item.link}" class="news-link" target="_blank">記事を詳しく読む →</a>
+    <a href="${<item.link>}" class="news-link" target="_blank">記事を詳しく読む →</a>
   `;
   document.getElementById('locationName').textContent = "世界ニュース速報 (BBC)";
 }
@@ -238,7 +389,7 @@ function switchMode(m) {
   document.getElementById('tabNews').classList.toggle('active', m === 'news');
   document.getElementById('newsContainer').style.display = (m === 'news') ? 'flex' : 'none';
   if (m === 'news') { document.getElementById('mainView').style.backgroundImage = 'none'; loadNews(); }
-  else { manualNext(); }
+  else { showCurrentPhoto(); }
   progress = 0;
 }
 
@@ -252,13 +403,10 @@ function startTicker() {
   setInterval(() => {
     if (isPaused) return;
     const l = (currentMode === 'photo' ? 45 : 25);
-    
-    // バーが100%に達したら、準備ができている場合のみ切り替え
     if (progress >= 100) {
       if (nextReady || currentMode === 'news') attemptAutoNext();
       return;
     }
-    
     progress += (10 / l);
     document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
   }, 100);
