@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.29</title>
+<title>World Window Pro ver 2.30</title>
 <style>
-  /* 赤色を完全に追放。漆黒を徹底 */
+  /* 赤を根絶。漆黒ベース */
   * { margin: 0; padding: 0; box-sizing: border-box; background-color: transparent; }
   html, body {
     background-color: #000 !important; color: #e0e0e0;
@@ -13,7 +13,6 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 開始オーバーレイ */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #000 !important; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -54,7 +53,7 @@
   .ctrl-btn { background-color: #222 !important; border: none; color: #fff; width: 70px; height: 70px; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; }
   .ctrl-btn:active { background-color: #5ba8f5 !important; }
 
-  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #444; display: none; z-index: 30; }
+  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; }
   .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
 </style>
 </head>
@@ -87,7 +86,7 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" style="background-color:#5ba8f5 !important;" onclick="manualNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.29</div>
+  <div class="version-tag">ver 2.30</div>
 </footer>
 
 <script>
@@ -95,23 +94,21 @@ let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 let nextImage = new Image(), nextReady = false;
 
-// 撮影年(year)を追加。古い写真用の検索キーワードも調整。
+// 【重要】Unsplashの高品質な画像IDを直接指定。検索エラー（猫）を防ぎます。
 const locations = [
-  { country: "フランス", city: "パリ", spot: "エッフェル塔", year: "1889", en: "Paris,Eiffel,1889" },
-  { country: "日本", city: "東京", spot: "銀座", year: "1930", en: "Ginza,Tokyo,1930" },
-  { country: "アメリカ", city: "ニューヨーク", spot: "タイムズスクエア", year: "1950", en: "NewYork,TimesSquare,1950" },
-  { country: "イギリス", city: "ロンドン", spot: "ビッグ・ベン", en: "London,BigBen" },
-  { country: "イタリア", city: "ベネチア", spot: "サン・マルコ広場", en: "Venice,SanMarco" },
-  { country: "日本", city: "京都", spot: "伏見稲荷大社", en: "Kyoto,Fushimi" },
-  { country: "エジプト", city: "ギザ", spot: "ピラミッド", year: "1920", en: "Giza,Pyramid,old" },
-  { country: "ドイツ", city: "ベルリン", spot: "ブランデンブルク門", year: "1945", en: "Berlin,1945" },
-  { country: "ブラジル", city: "リオデジャネイロ", spot: "コルコバードのキリスト像", en: "Rio,Christ" },
-  { country: "ギリシャ", city: "サントリーニ島", spot: "イアの街並み", en: "Santorini,Oia" },
-  { country: "シンガポール", city: "シンガポール", spot: "マリーナベイ・サンズ", en: "Singapore,MarinaBay" },
-  { country: "タイ", city: "バンコク", spot: "ワット・アルン", en: "Bangkok,WatArun" },
-  { country: "日本", city: "大阪", spot: "道頓堀", year: "1970", en: "Osaka,Dotonbori,1970" },
-  { country: "チェコ", city: "プラハ", spot: "カレル橋", year: "1910", en: "Prague,CharlesBridge,old" },
-  { country: "アメリカ", city: "サンフランシスコ", spot: "ゴールデンゲートブリッジ", year: "1937", en: "SanFrancisco,Bridge,1937" }
+  { c: "フランス", t: "パリ", s: "エッフェル塔", y: "1889", id: "nnzkZNYWHaU" },
+  { c: "日本", t: "東京", s: "渋谷スクランブル交差点", y: "2024", id: "Uu1E9yEku84" },
+  { c: "イギリス", t: "ロンドン", s: "ビッグ・ベン", y: "2023", id: "Oja2ty_9ZLM" },
+  { c: "アメリカ", t: "ニューヨーク", s: "タイムズスクエア", y: "1950", id: "6S6f88L1SXM" },
+  { c: "イタリア", t: "ベネチア", s: "サン・マルコ広場", y: "2022", id: "9_39pIvuN1w" },
+  { c: "日本", t: "京都", s: "伏見稲荷大社", y: "2024", id: "SST_D3-C8xY" },
+  { c: "イタリア", t: "ローマ", s: "コロッセオ", y: "1930", id: "hmI969O6L_E" },
+  { c: "スペイン", t: "バルセロナ", s: "サグラダ・ファミリア", y: "2023", id: "nnzkZNYWHaU" },
+  { c: "UAE", t: "ドバイ", s: "ブルジュ・ハリファ", y: "2024", id: "p0_3VvNf8i8" },
+  { c: "シンガポール", s: "マリーナベイ・サンズ", y: "2024", id: "1528673327342-e130ae04b86d" },
+  { c: "アメリカ", t: "サンフランシスコ", s: "ゴールデンゲートブリッジ", y: "1937", id: "1449034440478-56d70c2a52ac" },
+  { c: "エジプト", t: "ギザ", s: "ピラミッド", y: "1920", id: "1554652251-27715423f03b" },
+  { c: "ギリシャ", t: "サントリーニ島", s: "イアの街並み", y: "2024", id: "1570077188670-e3a8d69ac5ff" }
 ];
 
 function shuffle(array) {
@@ -123,58 +120,50 @@ function shuffle(array) {
 
 function formatLocation(loc) {
   if (!loc) return "";
-  let parts = [];
-  if (loc.country) parts.push(loc.country);
-  if (loc.city && loc.city !== loc.country) parts.push(loc.city);
-  if (loc.spot) parts.push(loc.spot);
-  let caption = parts.join(" / ");
-  if (loc.year) caption += ` / ${loc.year}`;
-  return caption;
+  let p = [];
+  if (loc.c) p.push(loc.c);
+  if (loc.t && loc.t !== loc.c) p.push(loc.t);
+  if (loc.s) p.push(loc.s);
+  let res = p.join(" / ");
+  if (loc.y) res += ` / ${loc.y}`;
+  return res;
 }
 
-function getImageUrl(loc) {
-  // 検索ヒット率を上げるためキーワードを整理
-  return `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.en)}/all?lock=${Math.floor(Math.random() * 99999)}`;
+function getUrl(loc) {
+  // Unsplashの公式画像サーバーから直接取得
+  return `https://images.unsplash.com/photo-${loc.id}?auto=format&fit=crop&w=1600&q=80`;
 }
 
 function initApp() {
   document.getElementById('startOverlay').style.display = 'none';
   shuffle(locations);
   currentIndex = 0;
-  loadFirstPhoto();
+  loadFirst();
   startTicker();
 }
 
-function loadFirstPhoto() {
+function loadFirst() {
   const loc = locations[currentIndex % locations.length];
-  const imgUrl = getImageUrl(loc);
-  const tempImg = new Image();
-  tempImg.onload = () => {
-    document.getElementById('mainView').style.backgroundImage = `url('${imgUrl}')`;
+  const url = getUrl(loc);
+  const temp = new Image();
+  temp.onload = () => {
+    document.getElementById('mainView').style.backgroundImage = `url('${url}')`;
     document.getElementById('locationName').textContent = formatLocation(loc);
     preloadNext();
   };
-  tempImg.src = imgUrl;
+  temp.src = url;
 }
 
 function preloadNext() {
   nextReady = false;
-  const nextLoc = locations[(currentIndex + 1) % locations.length];
-  const url = getImageUrl(nextLoc);
+  const nl = locations[(currentIndex + 1) % locations.length];
   nextImage = new Image();
   nextImage.onload = () => { nextReady = true; };
-  nextImage.src = url;
+  nextImage.src = getUrl(nl);
 }
 
-// 自動切り替え：バーが100%になり、かつ準備ができている時のみ
 function autoNext() {
-  if (currentMode === 'news') {
-    newsIndex++;
-    showNewsItem();
-    progress = 0;
-    return;
-  }
-  
+  if (currentMode === 'news') { newsIndex++; showNewsItem(); progress = 0; return; }
   if (nextReady) {
     currentIndex++;
     const loc = locations[currentIndex % locations.length];
@@ -182,51 +171,34 @@ function autoNext() {
     document.getElementById('locationName').textContent = formatLocation(loc);
     progress = 0;
     preloadNext();
-  } else {
-    // 準備がまだならバーを100%で止めて待機（カクつき防止）
-    progress = 100;
-  }
+  } else { progress = 100; }
 }
 
-// 手動切り替え（＞）：即座に黒画面にし、バーを止めてロード開始
 function manualNext() {
-  isPaused = true;
-  progress = 0;
+  isPaused = true; progress = 0;
   document.getElementById('progressFill').style.width = '0%';
-  
-  if (currentMode === 'news') {
-    newsIndex++;
-    showNewsItem();
-    isPaused = false;
-    return;
-  }
-
-  const contentArea = document.getElementById('mainView');
-  const nameLabel = document.getElementById('locationName');
-  const loader = document.getElementById('loader');
-
-  contentArea.style.backgroundImage = 'none';
-  nameLabel.textContent = '';
-  loader.style.display = 'block';
-
+  if (currentMode === 'news') { newsIndex++; showNewsItem(); isPaused = false; return; }
+  const mv = document.getElementById('mainView');
+  const nl = document.getElementById('locationName');
+  const ld = document.getElementById('loader');
+  mv.style.backgroundImage = 'none';
+  nl.textContent = '';
+  ld.style.display = 'block';
   currentIndex++;
   const loc = locations[currentIndex % locations.length];
-  const url = getImageUrl(loc);
-  const tempImg = new Image();
-  tempImg.onload = () => {
-    loader.style.display = 'none';
-    contentArea.style.backgroundImage = `url('${url}')`;
-    nameLabel.textContent = formatLocation(loc);
+  const url = getUrl(loc);
+  const temp = new Image();
+  temp.onload = () => {
+    ld.style.display = 'none';
+    mv.style.backgroundImage = `url('${url}')`;
+    nl.textContent = formatLocation(loc);
     isPaused = false;
     preloadNext();
   };
-  tempImg.src = url;
+  temp.src = url;
 }
 
-function manualPrev() {
-  currentIndex = (currentIndex - 1 + locations.length) % locations.length;
-  manualNext();
-}
+function manualPrev() { currentIndex = (currentIndex - 1 + locations.length) % locations.length; manualNext(); }
 
 async function loadNews() {
   try {
@@ -234,7 +206,7 @@ async function loadNews() {
     const data = await res.json();
     cachedNews = data.items;
     showNewsItem();
-  } catch(e) { document.getElementById('newsContent').innerHTML = "<h1>News load failed.</h1>"; }
+  } catch(e) { document.getElementById('newsContent').innerHTML = "<h1>News failed.</h1>"; }
 }
 
 function showNewsItem() {
@@ -248,37 +220,24 @@ function showNewsItem() {
   document.getElementById('locationName').textContent = "世界ニュース速報 (BBC)";
 }
 
-function switchMode(mode) {
-  currentMode = mode;
-  document.getElementById('tabPhoto').classList.toggle('active', mode === 'photo');
-  document.getElementById('tabNews').classList.toggle('active', mode === 'news');
-  document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
-  if (mode === 'news') {
-    document.getElementById('mainView').style.backgroundImage = 'none';
-    loadNews();
-  } else {
-    manualNext();
-  }
+function switchMode(m) {
+  currentMode = m;
+  document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
+  document.getElementById('tabNews').classList.toggle('active', m === 'news');
+  document.getElementById('newsContainer').style.display = (m === 'news') ? 'flex' : 'none';
+  if (m === 'news') { document.getElementById('mainView').style.backgroundImage = 'none'; loadNews(); }
+  else { manualNext(); }
+  progress = 0;
 }
 
-function togglePause() { 
-  isPaused = !isPaused; 
-  document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
-}
+function togglePause() { isPaused = !isPaused; document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;'; }
 
 function startTicker() {
   setInterval(() => {
     if (isPaused) return;
-    const limit = (currentMode === 'photo' ? 45 : 25);
-    
-    if (progress >= 100) {
-      if (nextReady || currentMode === 'news') {
-        autoNext();
-      }
-      return;
-    }
-    
-    progress += (10 / limit);
+    const l = (currentMode === 'photo' ? 45 : 25);
+    if (progress >= 100) { if (nextReady || currentMode === 'news') autoNext(); return; }
+    progress += (10 / l);
     document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
   }, 100);
 }
