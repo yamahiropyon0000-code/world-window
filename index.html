@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.01</title>
+<title>World Window Pro ver 2.02</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -12,13 +12,17 @@
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 背景写真：ふわっと切り替わるアニメーション */
+  /* 背景写真のレイヤー */
   #bgContainer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover; background-position: center;
-    transition: background-image 1.2s ease-in-out;
+    transition: opacity 0.8s ease-in-out;
     z-index: 1;
+    opacity: 1;
   }
+  /* 写真が切り替わる間のつなぎ */
+  .loading-bg { background: #050510; }
+
   #bgOverlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.35); z-index: 2;
@@ -27,8 +31,9 @@
   header, footer { position: relative; z-index: 100; flex-shrink: 0; }
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 25px; background: rgba(20, 20, 40, 0.8); backdrop-filter: blur(15px);
+    padding: 12px 25px; background: rgba(20, 20, 40, 0.85); backdrop-filter: blur(15px);
   }
+  .app-title { font-size: 20px; font-weight: 700; color: #fff; }
   .mode-tabs { display: flex; gap: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; }
   .mode-tab {
     padding: 8px 18px; border-radius: 7px; border: none; background: transparent;
@@ -46,18 +51,21 @@
 
   footer {
     padding: 20px 40px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 15px));
-    background: rgba(18, 18, 37, 0.85); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,255,255,0.15);
+    background: rgba(18, 18, 37, 0.9); backdrop-filter: blur(15px); border-top: 1px solid rgba(255,255,255,0.15);
   }
   .location-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .location-name { font-size: 22px; font-weight: 700; color: #fff; }
+  
   .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 25px; }
-  .progress-fill { height: 100%; background: #5ba8f5; width: 0%; transition: width 1s linear; }
+  #progressFill { height: 100%; background: #5ba8f5; width: 0%; transition: width 0.3s linear; }
 
   .controls { display: flex; align-items: center; justify-content: center; gap: 50px; }
   .ctrl-btn {
     background: rgba(255,255,255,0.2); border: none; color: #fff;
     width: 70px; height: 70px; border-radius: 50%; font-size: 30px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center; transition: background 0.2s;
   }
+  .ctrl-btn:active { background: #5ba8f5; }
   .main-next { background: #5ba8f5; }
 
   .version-tag {
@@ -66,7 +74,7 @@
   }
 </style>
 </head>
-<body>
+<body class="loading-bg">
 
 <div id="bgContainer"></div>
 <div id="bgOverlay"></div>
@@ -87,15 +95,15 @@
 
 <footer translate="no">
   <div class="location-info">
-    <span id="locationName" style="font-size:22px; font-weight:700;">Loading...</span>
+    <span id="locationName">Starting...</span>
   </div>
-  <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+  <div class="progress-bar"><div id="progressFill"></div></div>
   <div class="controls">
     <button class="ctrl-btn" onclick="goPrev()">&#9664;</button>
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn main-next" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.01</div>
+  <div class="version-tag">ver 2.02</div>
 </footer>
 
 <script>
@@ -105,26 +113,35 @@ let currentIndex = 0, cachedNews = [], newsIndex = 0;
 const locations = [
   { name: "Paris, France", keyword: "paris,city" },
   { name: "Tokyo, Japan", keyword: "tokyo,neon" },
-  { name: "Swiss Alps", keyword: "switzerland,snow" },
+  { name: "Swiss Alps", keyword: "switzerland,mountain" },
   { name: "New York, USA", keyword: "nyc,skyscrapers" },
   { name: "Venice, Italy", keyword: "venice,canal" },
   { name: "Kyoto, Japan", keyword: "kyoto,temple" },
   { name: "Santorini, Greece", keyword: "santorini,sea" },
-  { name: "Dubai, UAE", keyword: "dubai,desert" }
+  { name: "Dubai, UAE", keyword: "dubai,architecture" },
+  { name: "London, UK", keyword: "london,bridge" },
+  { name: "Sydney, Australia", keyword: "sydney,opera" }
 ];
 
 function showPhoto() {
   const loc = locations[currentIndex % locations.length];
   const bg = document.getElementById('bgContainer');
+  const nameLabel = document.getElementById('locationName');
   
-  // LoremFlickrに切り替え（Unsplash Source廃止のため）
-  const imgUrl = `https://loremflickr.com/1600/900/${loc.keyword}?lock=${currentIndex + 100}`;
+  // 文字を即座に「Loading...」を含む名前に変更してフィードバック
+  nameLabel.textContent = `⏳ Loading ${loc.name}...`;
+
+  // 画像URLを生成（lockパラメータで個別に取得）
+  const imgUrl = `https://loremflickr.com/1600/900/${loc.keyword}?lock=${currentIndex + 200}`;
   
-  // 読み込みが完了してから表示（真っ黒になるのを防ぐ）
   const tempImg = new Image();
   tempImg.onload = function() {
-    bg.style.backgroundImage = `url('${imgUrl}')`;
-    document.getElementById('locationName').textContent = loc.name;
+    bg.style.opacity = 0; // 一旦消して
+    setTimeout(() => {
+      bg.style.backgroundImage = `url('${imgUrl}')`;
+      bg.style.opacity = 1; // ふわっと出す
+      nameLabel.textContent = loc.name; // 読み込み完了で名前を確定
+    }, 200);
   };
   tempImg.src = imgUrl;
 }
@@ -136,7 +153,7 @@ async function loadNews() {
     cachedNews = data.items;
     showNewsItem();
   } catch(e) {
-    document.getElementById('newsContent').innerHTML = "<h1>News failed to load.</h1>";
+    document.getElementById('newsContent').innerHTML = "<h1>News Fetch Error</h1>";
   }
 }
 
@@ -146,9 +163,31 @@ function showNewsItem() {
   document.getElementById('newsContent').innerHTML = `
     <h1 class="news-title">${item.title}</h1>
     <p class="news-description">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
-    <p style="margin-top:20px; color:#5ba8f5; font-size:18px;">BBC World News</p>
+    <p style="margin-top:20px; color:#5ba8f5; font-size:18px;">BBC World Report</p>
   `;
   document.getElementById('locationName').textContent = "World News";
+}
+
+function goNext() {
+  resetProgress();
+  if (currentMode === 'photo') { 
+    currentIndex++; 
+    showPhoto(); 
+  } else { 
+    newsIndex++; 
+    showNewsItem(); 
+  }
+}
+
+function goPrev() {
+  resetProgress();
+  if (currentMode === 'photo') { 
+    currentIndex = (currentIndex - 1 + locations.length) % locations.length; 
+    showPhoto(); 
+  } else { 
+    newsIndex = Math.max(0, newsIndex - 1); 
+    showNewsItem(); 
+  }
 }
 
 function switchMode(mode) {
@@ -160,34 +199,27 @@ function switchMode(mode) {
   resetProgress();
 }
 
-function goNext() {
-  if (currentMode === 'photo') { currentIndex++; showPhoto(); }
-  else { newsIndex++; showNewsItem(); }
-  resetProgress();
-}
-
-function goPrev() {
-  if (currentMode === 'photo') { currentIndex = (currentIndex - 1 + locations.length) % locations.length; showPhoto(); }
-  else { newsIndex = Math.max(0, newsIndex - 1); showNewsItem(); }
-  resetProgress();
-}
-
 function togglePause() { 
   isPaused = !isPaused; 
   document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
 }
 
-function resetProgress() { progress = 0; }
+function resetProgress() { 
+  progress = 0; 
+  document.getElementById('progressFill').style.width = '0%';
+}
 
 function startTicker() {
   setInterval(() => {
     if (isPaused) return;
-    progress += (100 / (currentMode === 'photo' ? 45 : 25));
+    const limit = (currentMode === 'photo' ? 45 : 25);
+    progress += (100 / limit);
     document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
     if (progress >= 100) goNext();
   }, 1000);
 }
 
+// 初回実行
 showPhoto();
 startTicker();
 </script>
