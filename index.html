@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 2.22</title>
+<title>World Window Pro ver 2.23</title>
 <style>
-  /* 基本設定：赤を排除し、漆黒と濃いグレーで統一 */
+  /* 基本設定：ソリッドブラックで統一 */
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #000; /* ソリッドブラック */
+    background: #000;
     color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
   }
 
-  /* 開始オーバーレイ：黒背景に青ボタン */
+  /* 開始オーバーレイ */
   #startOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -39,28 +39,24 @@
   }
   .mode-tab.active { background: #fff; color: #000; }
 
-  /* メイン：中央に正方形の窓 */
+  /* メイン：上下のUIの間で最大化 */
   .content { 
-    flex: 1; position: relative; overflow: hidden; background: #000;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
+    flex: 1; position: relative; overflow: hidden;
+    background-size: cover; background-position: center; background-color: #000;
+    /* 窓枠として上下にボーダー */
+    border-top: 2px solid #222;
+    border-bottom: 2px solid #222;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  #photoWindow {
-    width: 85vh; height: 85vh; /* 正方形に近い窓 */
-    max-width: 90%; max-height: 90%;
-    background-size: cover; background-position: center; background-color: #111;
-    border: 2px solid #333; box-shadow: 0 0 50px rgba(0,0,0,1);
-    position: relative; display: flex; align-items: center; justify-content: center;
-  }
+  #loader { position: absolute; bottom: 20px; right: 20px; font-size: 14px; color: #5ba8f5; display: none; z-index: 10; }
+  .error-msg { display: none; color: #888; text-align: center; font-size: 16px; z-index: 10; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
-  #loader { position: absolute; bottom: 20px; right: 20px; font-size: 14px; color: #5ba8f5; display: none; }
-  .error-msg { display: none; color: #888; text-align: center; font-size: 16px; }
-
-  /* ニュース：窓の上に重ねる */
+  /* ニュースコンテナ：contentの上に重ねる */
   .news-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; display: none; flex-direction: column;
-    padding: 60px 40px; justify-content: center; z-index: 200;
+    padding: 60px 40px; justify-content: center; z-index: 20;
   }
   .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; }
 
@@ -68,7 +64,8 @@
     padding: 25px 40px; padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px));
     border-top: 1px solid #222;
   }
-  .location-name { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 15px; }
+  /* 場所名は日本語で大きく、白文字で読みやすく */
+  .location-name { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
   
   .progress-bar { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
   #progressFill { height: 100%; background: #5ba8f5; width: 0%; transition: width 0.1s linear; }
@@ -79,7 +76,7 @@
     width: 70px; height: 70px; border-radius: 50%; font-size: 28px;
     display: flex; align-items: center; justify-content: center;
   }
-  .ctrl-btn:active { background: #5ba8f5; }
+  .ctrl-btn:active { background: #5ba8f5; transform: scale(0.95); }
 
   .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #444; }
 </style>
@@ -87,23 +84,21 @@
 <body>
 
 <div id="startOverlay" onclick="initApp()">
-  <button class="start-btn">TAP TO START TOUR</button>
-  <p style="margin-top:20px; color:#555;">Discover the world in the central window.</p>
+  <button class="start-btn">旅を開始する</button>
+  <p style="margin-top:20px; color:#555;">画面中央に世界が広がります。</p>
 </div>
 
 <header translate="no">
   <span class="app-title">World Window</span>
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')">Photo</button>
-    <button class="mode-tab" id="tabNews" onclick="switchMode('news')">News</button>
+    <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')">絶景</button>
+    <button class="mode-tab" id="tabNews" onclick="switchMode('news')">ニュース</button>
   </div>
 </header>
 
 <div class="content">
-  <div id="photoWindow">
-    <div id="loader">Searching...</div>
-    <div class="error-msg">Finding another path...</div>
-  </div>
+  <div id="loader">検索中...</div>
+  <div class="error-msg">別のルートを探しています...</div>
   <div id="newsContainer" class="news-container" lang="en">
     <div id="newsContent"></div>
   </div>
@@ -117,7 +112,7 @@
     <button class="ctrl-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" style="background:#5ba8f5;" onclick="goNext()">&#9654;</button>
   </div>
-  <div class="version-tag">ver 2.22</div>
+  <div class="version-tag">ver 2.23</div>
 </footer>
 
 <script>
@@ -125,15 +120,71 @@ let currentMode = 'photo', isPaused = false, progress = 0;
 let currentIndex = 0, cachedNews = [], newsIndex = 0;
 let loadTimeout;
 
-// 1,000都市規模のベースリスト（動的生成の核）
-const cities = [
-  "Paris", "Tokyo", "London", "New York", "Venice", "Kyoto", "Rome", "Barcelona", "Dubai", "Seoul",
-  "Singapore", "Bangkok", "Prague", "Vienna", "Amsterdam", "Lisbon", "Santorini", "Swiss Alps", "Banff", "Sydney",
-  "Hong Kong", "Florence", "Istanbul", "Cape Town", "Rio de Janeiro", "Machu Picchu", "Hanoi", "Bali", "Phuket", "Maldives",
-  "Moscow", "Berlin", "Munich", "Madrid", "Seville", "Porto", "Brussels", "Stockholm", "Oslo", "Copenhagen",
-  "San Francisco", "Los Angeles", "Chicago", "Miami", "Las Vegas", "Vancouver", "Toronto", "Montreal", "Mexico City", "Havana",
-  "Buenos Aires", "Santiago", "Cusco", "Cairo", "Marrakech", "Petra", "Mumbai", "Shanghai", "Taipei", "Melbourne"
+// 厳選された主要都市・絶景スポットの日本語・英語・国名リスト（約60箇所）
+const locations = [
+  { cityEn: "Paris", cityJa: "パリ", countryJa: "フランス" },
+  { cityEn: "Tokyo", cityJa: "東京", countryJa: "日本" },
+  { cityEn: "London", cityJa: "ロンドン", countryJa: "イギリス" },
+  { cityEn: "New York", cityJa: "ニューヨーク", countryJa: "アメリカ" },
+  { cityEn: "Venice", cityJa: "ベネチア", countryJa: "イタリア" },
+  { cityEn: "Kyoto", cityJa: "京都", countryJa: "日本" },
+  { cityEn: "Rome", cityJa: "ローマ", countryJa: "イタリア" },
+  { cityEn: "Barcelona", cityJa: "バルセロナ", countryJa: "スペイン" },
+  { cityEn: "Dubai", cityJa: "ドバイ", countryJa: "UAE" },
+  { cityEn: "Seoul", cityJa: "ソウル", countryJa: "韓国" },
+  { cityEn: "Singapore", cityJa: "シンガポール", countryJa: "シンガポール" },
+  { cityEn: "Bangkok", cityJa: "バンコク", countryJa: "タイ" },
+  { cityEn: "Prague", cityJa: "プラハ", countryJa: "チェコ" },
+  { cityEn: "Vienna", cityJa: "ウィーン", countryJa: "オーストリア" },
+  { cityEn: "Amsterdam", cityJa: "アムステルダム", countryJa: "オランダ" },
+  { cityEn: "Lisbon", cityJa: "リスボン", countryJa: "ポルトガル" },
+  { cityEn: "Santorini", cityJa: "サントリーニ島", countryJa: "ギリシャ" },
+  { cityEn: "Swiss Alps", cityJa: "スイス・アルプス", countryJa: "スイス" },
+  { cityEn: "Banff", cityJa: "バンフ", countryJa: "カナダ" },
+  { cityEn: "Sydney", cityJa: "シドニー", countryJa: "オーストラリア" },
+  { cityEn: "Hong Kong", cityJa: "香港", countryJa: "中国" },
+  { cityEn: "Florence", cityJa: "フィレンツェ", countryJa: "イタリア" },
+  { cityEn: "Istanbul", cityJa: "イスタンブール", countryJa: "トルコ" },
+  { cityEn: "Cape Town", cityJa: "ケープタウン", countryJa: "南アフリカ" },
+  { cityEn: "Rio de Janeiro", cityJa: "リオデジャネイロ", countryJa: "ブラジル" },
+  { cityEn: "Machu Picchu", cityJa: "マチュピチュ", countryJa: "ペルー" },
+  { cityEn: "Hanoi", cityJa: "ハノイ", countryJa: "ベトナム" },
+  { cityEn: "Bali", cityJa: "バリ島", countryJa: "インドネシア" },
+  { cityEn: "Phuket", cityJa: "プーケット", countryJa: "タイ" },
+  { cityEn: "Maldives", cityJa: "モルディブ", countryJa: "モルディブ" },
+  { cityEn: "Moscow", cityJa: "モスクワ", countryJa: "ロシア" },
+  { cityEn: "Berlin", cityJa: "ベルリン", countryJa: "ドイツ" },
+  { cityEn: "Munich", cityJa: "ミュンヘン", countryJa: "ドイツ" },
+  { cityEn: "Madrid", cityJa: "マドリード", countryJa: "スペイン" },
+  { cityEn: "Seville", cityJa: "セビリア", countryJa: "スペイン" },
+  { cityEn: "Porto", cityJa: "ポルト", countryJa: "ポルトガル" },
+  { cityEn: "Brussels", cityJa: "ブリュッセル", countryJa: "ベルギー" },
+  { cityEn: "Stockholm", cityJa: "ストックホルム", countryJa: "スウェーデン" },
+  { cityEn: "Oslo", cityJa: "オスロ", countryJa: "ノルウェー" },
+  { cityEn: "Copenhagen", cityJa: "コペンハーゲン", countryJa: "デンマーク" },
+  { cityEn: "San Francisco", cityJa: "サンフランシスコ", countryJa: "アメリカ" },
+  { cityEn: "Los Angeles", cityJa: "ロサンゼルス", countryJa: "アメリカ" },
+  { cityEn: "Chicago", cityJa: "シカゴ", countryJa: "アメリカ" },
+  { cityEn: "Miami", cityJa: "マイアミ", countryJa: "アメリカ" },
+  { cityEn: "Las Vegas", cityJa: "ラスベガス", countryJa: "アメリカ" },
+  { cityEn: "Vancouver", cityJa: "バンクーバー", countryJa: "カナダ" },
+  { cityEn: "Toronto", cityJa: "トロント", countryJa: "カナダ" },
+  { cityEn: "Montreal", cityJa: "モントリオール", countryJa: "カナダ" },
+  { cityEn: "Mexico City", cityJa: "メキシコシティ", countryJa: "メキシコ" },
+  { cityEn: "Havana", cityJa: "ハバナ", countryJa: "キューバ" },
+  { cityEn: "Buenos Aires", cityJa: "ブエノスアイレス", countryJa: "アルゼンチン" },
+  { cityEn: "Santiago", cityJa: "サンティアゴ", countryJa: "チリ" },
+  { cityEn: "Cusco", cityJa: "クスコ", countryJa: "ペルー" },
+  { cityEn: "Cairo", cityJa: "カイロ", countryJa: "エジプト" },
+  { cityEn: "Marrakech", cityJa: "マラケシュ", countryJa: "モ Morocco" },
+  { cityEn: "Petra", cityJa: "ペトラ", countryJa: "ヨルダン" },
+  { cityEn: "Mumbai", cityJa: "ムンバイ", countryJa: "インド" },
+  { cityEn: "Shanghai", cityJa: "上海", countryJa: "中国" },
+  { cityEn: "Taipei", cityJa: "台北", countryJa: "台湾" },
+  { cityEn: "Melbourne", cityJa: "メルボルン", countryJa: "オーストラリア" }
 ];
+
+let activeList = [...locations];
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -142,28 +193,28 @@ function shuffle(array) {
   }
 }
 
-// アプリの初期化（重要：定義漏れを修正）
 function initApp() {
   document.getElementById('startOverlay').style.display = 'none';
-  shuffle(cities);
+  shuffle(activeList);
   showPhoto();
   startTicker();
 }
 
 function showPhoto() {
   clearTimeout(loadTimeout);
-  const city = cities[currentIndex % cities.length];
-  const win = document.getElementById('photoWindow');
+  const loc = activeList[currentIndex % activeList.length];
+  const contentArea = document.querySelector('.content');
   const loader = document.getElementById('loader');
-  const error = win.querySelector('.error-msg');
+  const error = document.querySelector('.content .error-msg');
   
   error.style.display = 'none';
   loader.style.display = 'block';
 
-  // タグをランダム化して「無限」感を出す
+  // 検索タグをランダム化
   const tags = ["architecture", "landscape", "street", "night", "landmark"];
   const randomTag = tags[Math.floor(Math.random() * tags.length)];
-  const imgUrl = `https://loremflickr.com/1200/1200/${encodeURIComponent(city)},${randomTag}/all?lock=${Date.now()}`;
+  // 英語都市名で検索
+  const imgUrl = `https://loremflickr.com/1600/1200/${encodeURIComponent(loc.cityEn)},${randomTag}/all?lock=${Date.now()}`;
   
   const img = new Image();
   loadTimeout = setTimeout(() => { goNext(); }, 5000); // 5秒でタイムアウト
@@ -171,8 +222,10 @@ function showPhoto() {
   img.onload = () => {
     clearTimeout(loadTimeout);
     loader.style.display = 'none';
-    win.style.backgroundImage = `url('${imgUrl}')`;
-    document.getElementById('locationName').textContent = city;
+    // 背景設定を contentArea (.content) に直接適用し最大化
+    contentArea.style.backgroundImage = `url('${imgUrl}')`;
+    // 日本語で「国名 / 都市名」を表示
+    document.getElementById('locationName').textContent = `${loc.countryJa} / ${loc.cityJa}`;
   };
   
   img.onerror = () => {
@@ -193,13 +246,13 @@ function goNext() {
 
 function goPrev() {
   progress = 0;
-  if (currentMode === 'photo') { currentIndex--; if(currentIndex<0) currentIndex=cities.length-1; showPhoto(); }
-  else { newsIndex--; showNewsItem(); }
+  if (currentMode === 'photo') { currentIndex = (currentIndex - 1 + activeList.length) % activeList.length; showPhoto(); }
+  else { newsIndex = Math.max(0, newsIndex - 1); showNewsItem(); }
 }
 
 async function loadNews() {
   try {
-    const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.jp/news/world/rss.xml");
+    const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
     const data = await res.json();
     cachedNews = data.items;
     showNewsItem();
@@ -213,7 +266,8 @@ function showNewsItem() {
     <h1 class="news-title">${item.title}</h1>
     <p style="font-size:24px; line-height:1.6; color:#ccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
   `;
-  document.getElementById('locationName').textContent = "BBC World News";
+  // ニュースモード時は場所名を固定
+  document.getElementById('locationName').textContent = "世界ニュース速報 (BBC)";
 }
 
 function switchMode(mode) {
@@ -221,7 +275,14 @@ function switchMode(mode) {
   document.getElementById('tabPhoto').classList.toggle('active', mode === 'photo');
   document.getElementById('tabNews').classList.toggle('active', mode === 'news');
   document.getElementById('newsContainer').style.display = (mode === 'news') ? 'flex' : 'none';
-  if (mode === 'news') loadNews(); else showPhoto();
+  
+  if (mode === 'news') {
+    loadNews();
+    // ニュースモード時は背景写真をクリア
+    document.querySelector('.content').style.backgroundImage = 'none';
+  } else {
+    showPhoto();
+  }
   progress = 0;
 }
 
@@ -237,7 +298,7 @@ function startTicker() {
     progress += (10 / limit);
     document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
     if (progress >= 100) goNext();
-  }, 100);
+  }, 100); // 0.1秒ごとに更新して滑らかに
 }
 </script>
 </body>
