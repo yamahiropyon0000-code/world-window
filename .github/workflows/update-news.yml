@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install feedparser beautifulsoup4 python-dateutil
 
-      - name: Generate world-window/news.json
+      - name: Generate news.json
         run: |
           python <<'PY'
           import json
@@ -56,8 +56,7 @@ jobs:
               {"region": "Latin America", "source": "Buenos Aires Times", "url": "https://www.batimes.com.ar/feed"}
           ]
 
-          OUT_PATH = Path("world-window/news.json")
-          OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+          OUT_PATH = Path("news.json")
 
           def clean_html(value: str) -> str:
               if not value:
@@ -163,12 +162,12 @@ jobs:
 
       - name: Commit and push if changed
         run: |
-          if git diff --quiet -- world-window/news.json; then
+          if git diff --quiet -- news.json; then
             echo "No changes"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add world-window/news.json
-          git commit -m "Update world-window/news.json"
+          git add news.json
+          git commit -m "Update news.json"
           git push
