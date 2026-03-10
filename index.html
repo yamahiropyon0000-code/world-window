@@ -81,7 +81,7 @@
   }
 
   .mode-tab {
-    padding: 7px 16px;
+    padding: 7px 14px;
     border-radius: 7px;
     border: none;
     background: transparent;
@@ -247,6 +247,7 @@
   <span class="app-title">World Window</span>
   <div class="mode-tabs">
     <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')" translate="no">絶景</button>
+    <button class="mode-tab" id="tabAlternate" onclick="switchMode('alternate')" translate="no">交互</button>
     <button class="mode-tab" id="tabNews" onclick="switchMode('news')" translate="no">ニュース</button>
   </div>
 </header>
@@ -284,12 +285,16 @@ let tickerId = null;
 let newsLoaded = false;
 let initStarted = false;
 let isFillingPool = false;
+let alternateStep = 'photo';
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 const INITIAL_POOL = 8;
 const MIN_POOL = 18;
 const REFILL_AT = 6;
 const REFILL_ADD = 12;
+
+const PHOTO_DURATION = 20;
+const NEWS_DURATION = 12.5;
 
 const SOURCE_CATEGORIES = [
   'Category:Featured pictures of cityscapes',
@@ -315,6 +320,7 @@ const els = {
   newsContent: document.getElementById('newsContent'),
   pauseBtn: document.getElementById('pauseBtn'),
   tabPhoto: document.getElementById('tabPhoto'),
+  tabAlternate: document.getElementById('tabAlternate'),
   tabNews: document.getElementById('tabNews')
 };
 
@@ -364,8 +370,17 @@ function getCurrentPhoto() {
   return loadedPhotos[currentIndex % loadedPhotos.length];
 }
 
+function getCurrentDisplayMode() {
+  if (currentMode === 'alternate') {
+    return alternateStep;
+  }
+  return currentMode;
+}
+
 function updateCounter() {
-  if (currentMode === 'news') {
+  const displayMode = getCurrentDisplayMode();
+
+  if (displayMode === 'news') {
     els.photoCount.textContent = cachedNews.length
       ? `${((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length + 1} / ${cachedNews.length}`
       : '0 / 0';
@@ -634,6 +649,7 @@ function showCurrentPhoto() {
   if (!item) return;
 
   setPhotoBackground(item.imgUrl);
+  els.newsContainer.style.display = 'none';
   els.locationName.textContent = item.caption || item.titleClean || '世界の風景';
   updateCounter();
 
@@ -674,6 +690,7 @@ function showPhotoAt(index) {
   if (!item) return;
 
   setPhotoBackground('');
+  els.newsContainer.style.display = 'none';
   els.locationName.textContent = '';
   setLoader('Now Loading...', true);
 
@@ -694,70 +711,15 @@ function showPhotoAt(index) {
   temp.src = item.imgUrl;
 }
 
-function attemptAutoNext() {
-  if (currentMode === 'news') {
-    newsIndex++;
-    showNewsItem();
-    setProgress(0);
-    return;
-  }
-
-  if (!loadedPhotos.length) return;
-
-  if (nextReady) {
-    currentIndex = (currentIndex + 1) % loadedPhotos.length;
-    showCurrentPhoto();
-    preloadNext();
-    setProgress(0);
-  } else {
-    setProgress(100);
-  }
-}
-
-function manualNext() {
-  if (currentMode === 'news') {
-    newsIndex++;
-    showNewsItem();
-    setProgress(0);
-    return;
-  }
-
-  if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex + 1);
-}
-
-function manualPrev() {
-  if (currentMode === 'news') {
-    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
-    showNewsItem();
-    setProgress(0);
-    return;
-  }
-
-  if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex - 1);
-}
-
-async function loadNews() {
-  if (newsLoaded && cachedNews.length) {
-    showNewsItem();
-    return;
-  }
-
-  try {
-    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml');
-    const data = await res.json();
-    cachedNews = Array.isArray(data.items) ? data.items : [];
-    newsLoaded = true;
-    showNewsItem();
-  } catch (e) {
-    els.newsContent.innerHTML = "<h1 class='news-title'>News load failed.</h1>";
-    els.locationName.textContent = '世界ニュース速報 (BBC)';
-    updateCounter();
-  }
+async function ensureNewsReady() {
+  if (newsLoaded && cachedNews.length) return;
+  await loadNews();
 }
 
 function showNewsItem() {
+  els.newsContainer.style.display = 'flex';
+  setPhotoBackground('');
+
   if (!cachedNews.length) {
     els.newsContent.innerHTML = "<h1 class='news-title'>No news available.</h1>";
     els.locationName.textContent = '世界ニュース速報 (BBC)';
@@ -797,21 +759,146 @@ function showNewsItem() {
   updateCounter();
 }
 
-function switchMode(mode) {
+async function loadNews() {
+  if (newsLoaded && cachedNews.length) {
+    showNewsItem();
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml');
+    const data = await res.json();
+    cachedNews = Array.isArray(data.items) ? data.items : [];
+    newsLoaded = true;
+    showNewsItem();
+  } catch (e) {
+    els.newsContent.innerHTML = "<h1 class='news-title'>News load failed.</h1>";
+    els.newsContainer.style.display = 'flex';
+    els.locationName.textContent = '世界ニュース速報 (BBC)';
+    updateCounter();
+  }
+}
+
+async function showAlternateCurrent() {
+  if (alternateStep === 'photo') {
+    showCurrentPhoto();
+    preloadNext();
+    return;
+  }
+
+  await ensureNewsReady();
+  showNewsItem();
+}
+
+async function switchMode(mode) {
   currentMode = mode;
 
   els.tabPhoto.classList.toggle('active', mode === 'photo');
+  els.tabAlternate.classList.toggle('active', mode === 'alternate');
   els.tabNews.classList.toggle('active', mode === 'news');
-  els.newsContainer.style.display = mode === 'news' ? 'flex' : 'none';
 
-  if (mode === 'news') {
-    setPhotoBackground('');
-    loadNews();
-  } else {
+  if (mode === 'photo') {
+    els.newsContainer.style.display = 'none';
     showCurrentPhoto();
+    preloadNext();
+  } else if (mode === 'news') {
+    alternateStep = 'news';
+    await ensureNewsReady();
+    showNewsItem();
+  } else {
+    alternateStep = 'photo';
+    await showAlternateCurrent();
   }
 
   setProgress(0);
+}
+
+async function advanceAlternateForward() {
+  if (alternateStep === 'photo') {
+    alternateStep = 'news';
+    await ensureNewsReady();
+    showNewsItem();
+  } else {
+    alternateStep = 'photo';
+    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    showCurrentPhoto();
+    preloadNext();
+  }
+  setProgress(0);
+}
+
+async function advanceAlternateBackward() {
+  if (alternateStep === 'photo') {
+    alternateStep = 'news';
+    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
+    await ensureNewsReady();
+    showNewsItem();
+  } else {
+    alternateStep = 'photo';
+    currentIndex = (currentIndex - 1 + loadedPhotos.length) % loadedPhotos.length;
+    showCurrentPhoto();
+    preloadNext();
+  }
+  setProgress(0);
+}
+
+async function attemptAutoNext() {
+  if (currentMode === 'news') {
+    newsIndex++;
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (currentMode === 'alternate') {
+    await advanceAlternateForward();
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+
+  if (nextReady) {
+    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    showCurrentPhoto();
+    preloadNext();
+    setProgress(0);
+  } else {
+    setProgress(100);
+  }
+}
+
+async function manualNext() {
+  if (currentMode === 'news') {
+    newsIndex++;
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (currentMode === 'alternate') {
+    await advanceAlternateForward();
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex + 1);
+}
+
+async function manualPrev() {
+  if (currentMode === 'news') {
+    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (currentMode === 'alternate') {
+    await advanceAlternateBackward();
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex - 1);
 }
 
 function togglePause() {
@@ -829,12 +916,11 @@ function startTicker() {
   tickerId = setInterval(() => {
     if (isPaused) return;
 
-    const duration = currentMode === 'photo' ? 40 : 25;
+    const displayMode = getCurrentDisplayMode();
+    const duration = displayMode === 'news' ? NEWS_DURATION : PHOTO_DURATION;
 
     if (progress >= 100) {
-      if (currentMode === 'news' || nextReady) {
-        attemptAutoNext();
-      }
+      attemptAutoNext();
       return;
     }
 
