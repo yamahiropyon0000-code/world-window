@@ -105,7 +105,7 @@
     background-position: center;
     background-repeat: no-repeat;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
   }
 
@@ -115,39 +115,47 @@
     background: #000;
     display: none;
     flex-direction: column;
-    justify-content: center;
-    padding: 26px 18px;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 18px 14px 10px;
     overflow-y: auto;
     z-index: 20;
     width: 100%;
   }
 
+  .news-inner {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
   .news-title {
-    font-size: clamp(28px, 4.3vw, 52px);
+    font-size: clamp(30px, 4.6vw, 62px);
     font-weight: 800;
-    line-height: 1.16;
-    margin-bottom: 14px;
+    line-height: 1.12;
+    margin-bottom: 10px;
     color: #fff;
     max-width: none;
+    letter-spacing: -0.02em;
   }
 
   .news-meta {
     font-size: 13px;
-    color: #8f8f8f;
-    margin-bottom: 12px;
+    color: #9a9a9a;
+    margin-bottom: 10px;
     line-height: 1.4;
   }
 
   .news-desc {
-    font-size: 21px;
-    line-height: 1.55;
-    color: #ccc;
+    font-size: clamp(20px, 2.1vw, 28px);
+    line-height: 1.5;
+    color: #d0d0d0;
     max-width: none;
   }
 
   .news-link {
     display: inline-block;
-    margin-top: 18px;
+    margin-top: 16px;
     color: #5ba8f5;
     font-size: 18px;
     text-decoration: none;
@@ -265,7 +273,7 @@
 <div class="content" id="mainView">
   <div id="loader">Now Loading...</div>
   <div id="newsContainer" class="news-container" lang="en" translate="yes">
-    <div id="newsContent"></div>
+    <div id="newsContent" class="news-inner"></div>
   </div>
 </div>
 
@@ -316,19 +324,16 @@ const SOURCE_CATEGORIES = [
   'Category:Featured pictures of villages'
 ];
 
+/* Google News の複数地域版 World フィードを混ぜる */
 const NEWS_FEEDS = [
-  {
-    name: 'BBC World',
-    url: 'https://feeds.bbci.co.uk/news/world/rss.xml'
-  },
-  {
-    name: 'Africanews',
-    url: 'https://www.africanews.com/feed/rss'
-  },
-  {
-    name: 'AP Top News',
-    url: 'https://apnews.com/hub/apf-topnews?output=rss'
-  }
+  { name: 'Google News US', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en' },
+  { name: 'Google News UK', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-GB&gl=GB&ceid=GB:en' },
+  { name: 'Google News India', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-IN&gl=IN&ceid=IN:en' },
+  { name: 'Google News Australia', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-AU&gl=AU&ceid=AU:en' },
+  { name: 'Google News Nigeria', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-NG&gl=NG&ceid=NG:en' },
+  { name: 'Google News South Africa', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-ZA&gl=ZA&ceid=ZA:en' },
+  { name: 'Google News Singapore', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-SG&gl=SG&ceid=SG:en' },
+  { name: 'Google News Canada', url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-CA&gl=CA&ceid=CA:en' }
 ];
 
 const categoryCursor = {};
@@ -396,10 +401,7 @@ function getCurrentPhoto() {
 }
 
 function getCurrentDisplayMode() {
-  if (currentMode === 'alternate') {
-    return alternateStep;
-  }
-  return currentMode;
+  return currentMode === 'alternate' ? alternateStep : currentMode;
 }
 
 function updateCounter() {
@@ -736,18 +738,31 @@ function showPhotoAt(index) {
   temp.src = item.imgUrl;
 }
 
-function normalizeNewsItem(item, sourceName) {
+function extractSourceName(item, fallbackName) {
+  if (item.author && item.author.trim()) return item.author.trim();
+
+  const title = item.title || '';
+  const parts = title.split(' - ');
+  if (parts.length >= 2) {
+    const tail = parts[parts.length - 1].trim();
+    if (tail && tail.length < 60) return tail;
+  }
+
+  return fallbackName;
+}
+
+function normalizeNewsItem(item, feedName) {
   return {
     title: item.title || '',
     description: item.description || item.content || '',
     link: item.link || '',
     pubDate: item.pubDate || item.published || '',
-    source: sourceName || item.author || ''
+    source: extractSourceName(item, feedName)
   };
 }
 
 async function fetchOneNewsFeed(feed) {
-  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=20`;
+  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=30`;
   const res = await fetch(endpoint);
   const data = await res.json();
 
@@ -769,41 +784,43 @@ function dedupeNews(items) {
   return out;
 }
 
-function sortNewsNewestFirst(items) {
-  return items.sort((a, b) => {
-    const da = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-    const db = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-    return db - da;
-  });
+function scoreNewsItem(item) {
+  const dateMs = item.pubDate ? new Date(item.pubDate).getTime() : 0;
+  const agePenalty = dateMs ? (Date.now() - dateMs) / (1000 * 60 * 60 * 24) : 30;
+  const freshness = Math.max(0, 30 - agePenalty);
+  return freshness + Math.random() * 10;
 }
 
-function mixedShuffle(items) {
-  const copy = [...items];
-  shuffle(copy);
-  return copy;
+function buildNewsPool(items) {
+  const sorted = [...items].sort((a, b) => scoreNewsItem(b) - scoreNewsItem(a));
+  const top = sorted.slice(0, 60);
+  const rest = sorted.slice(60);
+  shuffle(top);
+  shuffle(rest);
+  return top.concat(rest);
 }
 
 async function loadNews(forceReload = false) {
-  if (!forceReload && newsLoaded && cachedNews.length) {
-    return;
-  }
+  if (!forceReload && newsLoaded && cachedNews.length) return true;
 
   const results = await Promise.allSettled(NEWS_FEEDS.map(feed => fetchOneNewsFeed(feed)));
-  let merged = [];
 
+  let merged = [];
   for (const result of results) {
-    if (result.status === 'fulfilled') {
+    if (result.status === 'fulfilled' && Array.isArray(result.value)) {
       merged = merged.concat(result.value);
     }
   }
 
   merged = dedupeNews(merged);
-  merged = sortNewsNewestFirst(merged);
-
-  const newest = merged.slice(0, 30);
-  const rest = merged.slice(30);
-  cachedNews = mixedShuffle(newest).concat(mixedShuffle(rest));
+  cachedNews = buildNewsPool(merged);
   newsLoaded = cachedNews.length > 0;
+
+  if (newsLoaded && (newsIndex < 0 || newsIndex >= cachedNews.length)) {
+    newsIndex = 0;
+  }
+
+  return newsLoaded;
 }
 
 function renderNewsItem(item) {
@@ -828,7 +845,7 @@ function renderNewsItem(item) {
   const descEl = document.createElement('p');
   descEl.className = 'news-desc';
   const desc = stripHtml(item.description || '');
-  descEl.textContent = desc.length > 420 ? desc.slice(0, 420) + '...' : desc;
+  descEl.textContent = desc.length > 700 ? desc.slice(0, 700) + '...' : desc;
 
   els.newsContent.appendChild(titleEl);
   if (metaEl.textContent) els.newsContent.appendChild(metaEl);
@@ -849,12 +866,11 @@ async function ensureNewsReady() {
   if (newsLoaded && cachedNews.length) return true;
 
   try {
-    await loadNews(false);
+    return await loadNews(false);
   } catch (e) {
     console.warn('loadNews failed:', e);
+    return false;
   }
-
-  return cachedNews.length > 0;
 }
 
 async function showNewsAtCurrentIndex() {
@@ -862,13 +878,15 @@ async function showNewsAtCurrentIndex() {
   setPhotoBackground('');
 
   if (!cachedNews.length) {
-    els.newsContent.innerHTML = "<h1 class='news-title'>No news available.</h1>";
+    els.newsContent.innerHTML = "<h1 class='news-title'>News temporarily unavailable.</h1>";
     els.locationName.textContent = '世界ニュース速報';
     updateCounter();
     return;
   }
 
-  const item = cachedNews[((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length];
+  const safeIndex = ((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length;
+  const item = cachedNews[safeIndex];
+
   renderNewsItem(item);
   els.locationName.textContent = item.source ? `世界ニュース速報 / ${item.source}` : '世界ニュース速報';
   updateCounter();
@@ -884,7 +902,7 @@ async function advanceNewsForward() {
   newsIndex = (newsIndex + 1) % cachedNews.length;
   await showNewsAtCurrentIndex();
 
-  if (newsIndex >= cachedNews.length - 3) {
+  if (newsIndex >= cachedNews.length - 5) {
     loadNews(true).catch(err => console.warn(err));
   }
 }
@@ -923,11 +941,16 @@ async function switchMode(mode) {
     preloadNext();
   } else if (mode === 'news') {
     alternateStep = 'news';
-    if (newsIndex < 0) {
-      await advanceNewsForward();
-    } else {
-      await showNewsAtCurrentIndex();
+    if (!newsLoaded || !cachedNews.length) {
+      const ok = await loadNews(false);
+      if (!ok) {
+        await showNewsAtCurrentIndex();
+        setProgress(0);
+        return;
+      }
     }
+    if (newsIndex < 0) newsIndex = 0;
+    await showNewsAtCurrentIndex();
   } else {
     alternateStep = 'photo';
     showCurrentPhoto();
