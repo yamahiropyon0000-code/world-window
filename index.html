@@ -246,8 +246,8 @@
 <header translate="no">
   <span class="app-title">World Window</span>
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')">絶景</button>
-    <button class="mode-tab" id="tabNews" onclick="switchMode('news')">ニュース</button>
+    <button class="mode-tab active" id="tabPhoto" onclick="switchMode('photo')" translate="no">絶景</button>
+    <button class="mode-tab" id="tabNews" onclick="switchMode('news')" translate="no">ニュース</button>
   </div>
 </header>
 
@@ -258,16 +258,16 @@
   </div>
 </div>
 
-<footer translate="no">
-  <div id="locationName" class="location-name"></div>
+<footer>
+  <div id="locationName" class="location-name" translate="yes"></div>
   <div class="progress-bar"><div id="progressFill"></div></div>
   <div class="controls">
     <button class="ctrl-btn" onclick="manualPrev()">&#9198;</button>
     <button class="ctrl-btn play-pause-btn" id="pauseBtn" onclick="togglePause()">&#10074;&#10074;</button>
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
-  <span class="photo-count" id="photoCount"></span>
-  <div class="version-tag">live</div>
+  <span class="photo-count" id="photoCount" translate="no"></span>
+  <div class="version-tag" translate="no">live</div>
 </footer>
 
 <script>
@@ -286,8 +286,10 @@ let initStarted = false;
 let isFillingPool = false;
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
-const MIN_POOL = 24;
-const REFILL_AT = 8;
+const INITIAL_POOL = 8;
+const MIN_POOL = 18;
+const REFILL_AT = 6;
+const REFILL_ADD = 12;
 
 const SOURCE_CATEGORIES = [
   'Category:Featured pictures of cityscapes',
@@ -551,14 +553,14 @@ async function loadFromCategories() {
   let files = [];
 
   try {
-    files = await fetchCategoryFiles(category, 30);
+    files = await fetchCategoryFiles(category, 20);
   } catch (e) {
     console.warn('Category fetch failed:', category, e);
     return [];
   }
 
   shuffle(files);
-  const titles = files.slice(0, 20).map(f => f.title);
+  const titles = files.slice(0, 12).map(f => f.title);
 
   try {
     const pages = await fetchFileInfo(titles);
@@ -576,7 +578,7 @@ async function loadFromRandomFallback() {
   let files = [];
 
   try {
-    files = await fetchRandomFiles(24);
+    files = await fetchRandomFiles(16);
   } catch (e) {
     console.warn('Random file fetch failed:', e);
     return [];
@@ -606,11 +608,11 @@ async function fillImagePool(targetCount = MIN_POOL) {
     const seen = new Set(loadedPhotos.map(p => p.id));
     let safety = 0;
 
-    while (loadedPhotos.length < targetCount && safety < 8) {
+    while (loadedPhotos.length < targetCount && safety < 6) {
       safety++;
 
       let items = await loadFromCategories();
-      if (items.length < 4) {
+      if (items.length < 3) {
         const fallback = await loadFromRandomFallback();
         items = items.concat(fallback);
       }
@@ -637,7 +639,7 @@ function showCurrentPhoto() {
 
   const remain = loadedPhotos.length - currentIndex - 1;
   if (remain <= REFILL_AT) {
-    fillImagePool(loadedPhotos.length + 12);
+    fillImagePool(Math.max(MIN_POOL, loadedPhotos.length + REFILL_ADD));
   }
 }
 
@@ -847,10 +849,10 @@ async function initApp() {
   els.startOverlay.style.cursor = 'default';
   els.startOverlay.onclick = null;
   els.startBtn.textContent = '収集中...';
-  setLoader('世界の風景を集めています...', true);
+  setLoader('最初の数枚を集めています...', true);
 
   try {
-    await fillImagePool(MIN_POOL);
+    await fillImagePool(INITIAL_POOL);
 
     if (!loadedPhotos.length) {
       throw new Error('no images');
@@ -865,7 +867,7 @@ async function initApp() {
     els.startOverlay.style.display = 'none';
     setLoader('', false);
 
-    fillImagePool(MIN_POOL + 18);
+    fillImagePool(MIN_POOL);
   } catch (e) {
     console.warn(e);
     setLoader('', false);
