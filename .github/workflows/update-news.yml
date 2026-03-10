@@ -160,9 +160,9 @@ jobs:
           print(f"Wrote {OUT_PATH} with {payload['count']} items")
           PY
 
-      - name: Commit and push if changed
+            - name: Commit and push if changed
         run: |
-          if git diff --quiet -- news.json; then
+          if [ -z "$(git status --porcelain -- news.json)" ]; then
             echo "No changes"
             exit 0
           fi
