@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>World Window Pro ver 3.0.4</title>
+<title>World Window Pro</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
-    background-color: #000;
+    background: #000;
     color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     width: 100%;
+    height: 100%;
     overflow: hidden;
   }
 
@@ -25,7 +25,7 @@
   #startOverlay {
     position: fixed;
     inset: 0;
-    background-color: #000;
+    background: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -36,7 +36,7 @@
 
   .start-btn {
     padding: 22px 60px;
-    background-color: #5ba8f5;
+    background: #5ba8f5;
     color: #fff;
     border-radius: 50px;
     font-size: 24px;
@@ -46,16 +46,16 @@
   }
 
   .start-sub {
-    color: #555;
+    color: #666;
     font-size: 14px;
     margin-top: 16px;
   }
 
   header, footer {
     position: relative;
-    z-index: 100;
+    z-index: 10;
     flex-shrink: 0;
-    background-color: #0a0a0a;
+    background: #0a0a0a;
   }
 
   header {
@@ -75,7 +75,7 @@
   .mode-tabs {
     display: flex;
     gap: 6px;
-    background-color: #222;
+    background: #222;
     border-radius: 10px;
     padding: 3px;
   }
@@ -92,7 +92,7 @@
   }
 
   .mode-tab.active {
-    background-color: #fff;
+    background: #fff;
     color: #000;
   }
 
@@ -100,7 +100,7 @@
     flex: 1;
     position: relative;
     overflow: hidden;
-    background-color: #000;
+    background: #000;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -112,13 +112,13 @@
   .news-container {
     position: absolute;
     inset: 0;
-    background-color: #000;
+    background: #000;
     display: none;
     flex-direction: column;
-    padding: 60px 40px;
     justify-content: center;
-    z-index: 20;
+    padding: 60px 40px;
     overflow-y: auto;
+    z-index: 20;
   }
 
   .news-title {
@@ -145,6 +145,20 @@
     width: fit-content;
   }
 
+  #loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    color: #777;
+    display: none;
+    z-index: 30;
+    text-align: center;
+    line-height: 1.8;
+    white-space: pre-line;
+  }
+
   footer {
     padding: 25px 40px;
     padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px));
@@ -152,18 +166,19 @@
   }
 
   .location-name {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
     color: #fff;
-    min-height: 1.2em;
+    min-height: 2.4em;
     margin-bottom: 15px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    line-height: 1.25;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
   }
 
   .progress-bar {
     width: 100%;
     height: 6px;
-    background-color: #1a1a1a;
+    background: #1a1a1a;
     border-radius: 3px;
     margin-bottom: 25px;
     overflow: hidden;
@@ -184,7 +199,7 @@
   }
 
   .ctrl-btn {
-    background-color: #222;
+    background: #222;
     border: none;
     color: #fff;
     width: 65px;
@@ -201,27 +216,7 @@
     width: 85px;
     height: 85px;
     font-size: 34px;
-    background-color: #5ba8f5;
-  }
-
-  #loader {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 16px;
-    color: #555;
-    display: none;
-    z-index: 30;
-    text-align: center;
-  }
-
-  .version-tag {
-    position: absolute;
-    bottom: 8px;
-    right: 120px;
-    font-size: 10px;
-    color: #333;
+    background: #5ba8f5;
   }
 
   .photo-count {
@@ -231,13 +226,21 @@
     font-size: 10px;
     color: #333;
   }
+
+  .version-tag {
+    position: absolute;
+    bottom: 8px;
+    right: 40px;
+    font-size: 10px;
+    color: #333;
+  }
 </style>
 </head>
 <body>
 
 <div id="startOverlay" onclick="initApp()">
   <button class="start-btn">旅を開始する</button>
-  <p class="start-sub">世界中の街や風景を収集します</p>
+  <p class="start-sub">世界の街や風景をランダムに収集します</p>
 </div>
 
 <header translate="no">
@@ -264,7 +267,7 @@
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
   <span class="photo-count" id="photoCount"></span>
-  <div class="version-tag">ver 3.0.4</div>
+  <div class="version-tag">live</div>
 </footer>
 
 <script>
@@ -279,20 +282,24 @@ let nextReady = false;
 let loadedPhotos = [];
 let tickerId = null;
 let newsLoaded = false;
+let initStarted = false;
 let isFillingPool = false;
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+const MIN_POOL = 24;
+const REFILL_AT = 8;
 
-const SEED_CATEGORIES = [
+const SOURCE_CATEGORIES = [
   'Category:Featured pictures of cityscapes',
-  'Category:Cityscapes by country',
-  'Category:Villages by country',
-  'Category:Ports and harbours by country',
-  'Category:Mountains by country',
-  'Category:Lakes by country',
-  'Category:Rivers by country',
-  'Category:Beaches by country'
+  'Category:Featured pictures of mountains',
+  'Category:Featured pictures of lakes',
+  'Category:Featured pictures of skylines',
+  'Category:Featured pictures of beaches',
+  'Category:Featured pictures of rivers',
+  'Category:Featured pictures of villages'
 ];
+
+const categoryCursor = {};
 
 const els = {
   startOverlay: document.getElementById('startOverlay'),
@@ -317,7 +324,6 @@ function shuffle(array) {
 }
 
 function sample(array) {
-  if (!array || !array.length) return null;
   return array[Math.floor(Math.random() * array.length)];
 }
 
@@ -325,6 +331,21 @@ function stripHtml(html) {
   const div = document.createElement('div');
   div.innerHTML = html || '';
   return (div.textContent || div.innerText || '').trim();
+}
+
+function cleanFileTitle(title) {
+  return decodeURIComponent(
+    (title || '')
+      .replace(/^File:/i, '')
+      .replace(/\.[a-z0-9]{2,5}$/i, '')
+      .replace(/[_]+/g, ' ')
+  ).trim();
+}
+
+function shortenText(text, maxLen) {
+  const s = (text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return '';
+  return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
 }
 
 function setProgress(value) {
@@ -341,7 +362,7 @@ function getCurrentPhoto() {
   return loadedPhotos[currentIndex % loadedPhotos.length];
 }
 
-function updatePhotoCounter() {
+function updateCounter() {
   if (currentMode === 'news') {
     els.photoCount.textContent = cachedNews.length
       ? `${((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length + 1} / ${cachedNews.length}`
@@ -354,105 +375,9 @@ function updatePhotoCounter() {
     : '0 / 0';
 }
 
-function cleanFileTitle(title) {
-  return decodeURIComponent(
-    (title || '')
-      .replace(/^File:/i, '')
-      .replace(/\.[a-z0-9]{2,5}$/i, '')
-      .replace(/[_]+/g, ' ')
-  ).trim();
-}
-
-function shortenText(text, maxLen = 110) {
-  const s = (text || '').replace(/\s+/g, ' ').trim();
-  if (!s) return '';
-  return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
-}
-
-function buildCaption(item) {
-  if (!item) return '';
-  if (item.captionJa) return item.captionJa;
-  if (item.caption) return item.caption;
-
-  const parts = [];
-  if (item.place) parts.push(item.place);
-  if (item.theme) parts.push(item.theme);
-  if (item.titleClean) parts.push(item.titleClean);
-  return parts.join(' / ');
-}
-
-async function apiFetch(params) {
-  const url = new URL(COMMONS_API);
-  Object.entries({
-    action: 'query',
-    format: 'json',
-    origin: '*',
-    ...params
-  }).forEach(([k, v]) => url.searchParams.set(k, v));
-
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-async function fetchCategoryMembers(categoryTitle, type = 'subcat', limit = 40) {
-  const data = await apiFetch({
-    list: 'categorymembers',
-    cmtitle: categoryTitle,
-    cmtype: type,
-    cmlimit: String(limit)
-  });
-  return data?.query?.categorymembers || [];
-}
-
-async function pickCategoryWithFiles(seedCategory) {
-  let current = seedCategory;
-
-  for (let depth = 0; depth < 3; depth++) {
-    let files = [];
-    try {
-      files = await fetchCategoryMembers(current, 'file', 30);
-    } catch (_) {}
-
-    if (files.length >= 8) return current;
-
-    let subcats = [];
-    try {
-      subcats = await fetchCategoryMembers(current, 'subcat', 60);
-    } catch (_) {}
-
-    if (!subcats.length) return current;
-    current = sample(subcats).title;
-  }
-
-  return current;
-}
-
-async function fetchFileInfo(fileTitles) {
-  if (!fileTitles.length) return [];
-
-  const chunks = [];
-  for (let i = 0; i < fileTitles.length; i += 20) {
-    chunks.push(fileTitles.slice(i, i + 20));
-  }
-
-  const all = [];
-  for (const chunk of chunks) {
-    const data = await apiFetch({
-      prop: 'imageinfo|categories',
-      titles: chunk.join('|'),
-      iiprop: 'url|extmetadata|size|mime',
-      iiurlwidth: '1600',
-      cllimit: '20'
-    });
-
-    const pages = data?.query?.pages || {};
-    for (const pageId in pages) {
-      all.push(pages[pageId]);
-    }
-  }
-
-  return all;
+function setLoader(text, show = true) {
+  els.loader.textContent = text;
+  els.loader.style.display = show ? 'block' : 'none';
 }
 
 function categoryText(page) {
@@ -463,11 +388,11 @@ function categoryText(page) {
 }
 
 function looksLikeBadImage(page) {
-  const ii = page.imageinfo?.[0];
+  const ii = page.imageinfo && page.imageinfo[0];
   if (!ii) return true;
 
-  const title = (page.title || '').toLowerCase();
   const mime = (ii.mime || '').toLowerCase();
+  const title = (page.title || '').toLowerCase();
   const cats = categoryText(page);
   const desc = (
     stripHtml(ii.extmetadata?.ImageDescription?.value || '') + ' ' +
@@ -475,125 +400,219 @@ function looksLikeBadImage(page) {
   ).toLowerCase();
 
   if (!mime.startsWith('image/')) return true;
-  if (mime.includes('svg')) return true;
-  if ((ii.width || 0) < 900 || (ii.height || 0) < 600) return true;
+  if (!(mime.includes('jpeg') || mime.includes('jpg'))) return true;
+  if ((ii.width || 0) < 1100 || (ii.height || 0) < 700) return true;
 
   const badWords = [
     'logo', 'flag', 'map', 'locator', 'route map', 'diagram', 'chart', 'symbol',
     'seal', 'crest', 'coat of arms', 'icon', 'poster', 'stamp', 'banknote',
     'drawing', 'painting', 'illustration', 'etching', 'engraving', 'sketch',
-    'portrait', 'passport', 'document', 'signature', 'currency', 'emblem'
+    'portrait', 'selfie', 'passport', 'document', 'signature', 'currency',
+    'emblem', 'screenshot', 'cover art', 'book cover', 'movie poster',
+    'aircraft', 'train interior', 'bus interior', 'car interior'
   ];
 
   for (const word of badWords) {
-    if (title.includes(word) || cats.includes(word) || desc.includes(word)) {
-      return true;
-    }
+    if (title.includes(word) || cats.includes(word) || desc.includes(word)) return true;
   }
 
-  const goodWords = [
-    'cityscape', 'street', 'streetscape', 'village', 'town', 'harbour', 'harbor',
-    'port', 'lake', 'river', 'mountain', 'beach', 'forest', 'skyline',
-    'panorama', 'landscape', 'old town', 'alley', 'coast', 'canal'
-  ];
-
-  for (const word of goodWords) {
-    if (title.includes(word) || cats.includes(word) || desc.includes(word)) {
-      return false;
-    }
-  }
-
-  if (mime === 'image/jpeg' && (ii.width || 0) >= 1400) return false;
-
-  return true;
+  return false;
 }
 
-function extractPlace(page) {
-  const cats = (page.categories || []).map(c => c.title.replace(/^Category:/i, ''));
-  const preferred = cats.find(c =>
-    / in | of | by country| cityscapes| villages| harbours| harbors| ports| mountains| lakes| rivers| beaches/i.test(c)
-  );
-  return preferred || '';
-}
-
-function extractTheme(page) {
-  const text = categoryText(page);
-  if (text.includes('cityscape')) return '街並み';
-  if (text.includes('street')) return '通り';
-  if (text.includes('village')) return '村';
-  if (text.includes('harbour') || text.includes('harbor') || text.includes('port')) return '港';
-  if (text.includes('mountain')) return '山の風景';
-  if (text.includes('lake')) return '湖';
-  if (text.includes('river')) return '川辺';
-  if (text.includes('beach')) return '海辺';
-  if (text.includes('forest')) return '森';
-  if (text.includes('landscape')) return '風景';
+function extractTheme(text) {
+  const t = (text || '').toLowerCase();
+  if (t.includes('cityscape') || t.includes('skyline')) return '街並み';
+  if (t.includes('village') || t.includes('old town')) return '村や旧市街';
+  if (t.includes('mountain') || t.includes('alps') || t.includes('himalaya')) return '山の風景';
+  if (t.includes('lake')) return '湖';
+  if (t.includes('river')) return '川辺';
+  if (t.includes('beach') || t.includes('coast') || t.includes('shore')) return '海辺';
+  if (t.includes('harbour') || t.includes('harbor') || t.includes('port')) return '港';
+  if (t.includes('forest')) return '森';
   return '世界の風景';
 }
 
+function extractPlace(page) {
+  const candidates = (page.categories || [])
+    .map(c => c.title.replace(/^Category:/i, ''))
+    .filter(t => / in | of | from | at /i.test(t));
+
+  if (!candidates.length) return '';
+  const best = candidates[0]
+    .replace(/^Featured pictures of\s*/i, '')
+    .replace(/^Photographs of\s*/i, '')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .trim();
+
+  return shortenText(best, 60);
+}
+
 function pageToPhotoItem(page) {
-  const ii = page.imageinfo?.[0];
-  if (!ii?.thumburl) return null;
+  const ii = page.imageinfo && page.imageinfo[0];
+  if (!ii || !ii.thumburl) return null;
 
   const titleClean = cleanFileTitle(page.title);
   const rawDesc =
     stripHtml(ii.extmetadata?.ObjectName?.value || '') ||
     stripHtml(ii.extmetadata?.ImageDescription?.value || '');
 
+  const cats = categoryText(page);
   const place = extractPlace(page);
-  const theme = extractTheme(page);
+  const theme = extractTheme(cats + ' ' + rawDesc + ' ' + titleClean);
 
-  const captionParts = [];
-  if (place) captionParts.push(shortenText(place.replace(/\s*\([^)]*\)\s*/g, ''), 70));
-  if (theme) captionParts.push(theme);
-  if (rawDesc) captionParts.push(shortenText(rawDesc, 80));
-  else if (titleClean) captionParts.push(shortenText(titleClean, 80));
+  const parts = [];
+  if (place) parts.push(place);
+  if (theme) parts.push(theme);
+  if (rawDesc) parts.push(shortenText(rawDesc, 78));
+  else parts.push(shortenText(titleClean, 78));
 
   return {
     id: page.title,
     imgUrl: ii.thumburl,
-    fullUrl: ii.descriptionurl || '',
     titleClean,
-    caption: captionParts.join(' / '),
-    place: shortenText(place.replace(/\s*\([^)]*\)\s*/g, ''), 70),
-    theme
+    caption: parts.join(' / ')
   };
 }
 
-async function loadCategoryBatch(seedCategory) {
-  const chosenCategory = await pickCategoryWithFiles(seedCategory);
-  const fileMembers = await fetchCategoryMembers(chosenCategory, 'file', 30);
+async function apiFetch(params) {
+  const url = new URL(COMMONS_API);
+  Object.entries({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    ...params
+  }).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') {
+      url.searchParams.set(k, v);
+    }
+  });
 
-  if (!fileMembers.length) return [];
-
-  shuffle(fileMembers);
-  const picked = fileMembers.slice(0, 18).map(f => f.title);
-  const pages = await fetchFileInfo(picked);
-
-  return pages
-    .filter(page => !looksLikeBadImage(page))
-    .map(pageToPhotoItem)
-    .filter(Boolean);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
-async function fillImagePool(targetCount = 60) {
+async function fetchCategoryFiles(categoryTitle, limit = 24) {
+  const params = {
+    list: 'categorymembers',
+    cmtitle: categoryTitle,
+    cmtype: 'file',
+    cmlimit: String(limit)
+  };
+
+  if (categoryCursor[categoryTitle]) {
+    params.cmcontinue = categoryCursor[categoryTitle];
+  }
+
+  const data = await apiFetch(params);
+  categoryCursor[categoryTitle] = data.continue?.cmcontinue || null;
+
+  return data.query?.categorymembers || [];
+}
+
+async function fetchRandomFiles(limit = 20) {
+  const data = await apiFetch({
+    list: 'random',
+    rnnamespace: '6',
+    rnlimit: String(limit)
+  });
+  return data.query?.random || [];
+}
+
+async function fetchFileInfo(fileTitles) {
+  if (!fileTitles.length) return [];
+
+  const chunks = [];
+  for (let i = 0; i < fileTitles.length; i += 20) {
+    chunks.push(fileTitles.slice(i, i + 20));
+  }
+
+  const pages = [];
+  for (const chunk of chunks) {
+    const data = await apiFetch({
+      prop: 'imageinfo|categories',
+      titles: chunk.join('|'),
+      iiprop: 'url|extmetadata|size|mime',
+      iiurlwidth: '1600',
+      cllimit: '20'
+    });
+
+    const rawPages = data.query?.pages || {};
+    for (const pageId in rawPages) {
+      pages.push(rawPages[pageId]);
+    }
+  }
+
+  return pages;
+}
+
+async function loadFromCategories() {
+  const category = sample(SOURCE_CATEGORIES);
+  let files = [];
+
+  try {
+    files = await fetchCategoryFiles(category, 30);
+  } catch (e) {
+    console.warn('Category fetch failed:', category, e);
+    return [];
+  }
+
+  shuffle(files);
+  const titles = files.slice(0, 20).map(f => f.title);
+
+  try {
+    const pages = await fetchFileInfo(titles);
+    return pages
+      .filter(page => !looksLikeBadImage(page))
+      .map(pageToPhotoItem)
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('File info fetch failed:', e);
+    return [];
+  }
+}
+
+async function loadFromRandomFallback() {
+  let files = [];
+
+  try {
+    files = await fetchRandomFiles(24);
+  } catch (e) {
+    console.warn('Random file fetch failed:', e);
+    return [];
+  }
+
+  const titles = files.map(f => f.title);
+
+  try {
+    const pages = await fetchFileInfo(titles);
+    return pages
+      .filter(page => !looksLikeBadImage(page))
+      .map(pageToPhotoItem)
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('Random file info fetch failed:', e);
+    return [];
+  }
+}
+
+async function fillImagePool(targetCount = MIN_POOL) {
   if (isFillingPool) return;
   if (loadedPhotos.length >= targetCount) return;
 
   isFillingPool = true;
+
   try {
     const seen = new Set(loadedPhotos.map(p => p.id));
     let safety = 0;
 
-    while (loadedPhotos.length < targetCount && safety < 14) {
+    while (loadedPhotos.length < targetCount && safety < 8) {
       safety++;
-      const seed = sample(SEED_CATEGORIES);
-      let items = [];
 
-      try {
-        items = await loadCategoryBatch(seed);
-      } catch (e) {
-        console.warn('Category batch failed:', seed, e);
+      let items = await loadFromCategories();
+      if (items.length < 4) {
+        const fallback = await loadFromRandomFallback();
+        items = items.concat(fallback);
       }
 
       for (const item of items) {
@@ -608,39 +627,17 @@ async function fillImagePool(targetCount = 60) {
   }
 }
 
-async function initApp() {
-  els.startBtn.textContent = '収集中...';
-  els.startOverlay.style.cursor = 'default';
-  els.startOverlay.onclick = null;
-
-  await fillImagePool(70);
-  shuffle(loadedPhotos);
-
-  els.startOverlay.style.display = 'none';
-
-  if (!loadedPhotos.length) {
-    els.locationName.textContent = '画像を取得できませんでした';
-    els.photoCount.textContent = '0 / 0';
-    return;
-  }
-
-  showCurrentPhoto();
-  preloadNext();
-  startTicker();
-
-  fillImagePool(120);
-}
-
 function showCurrentPhoto() {
-  const loc = getCurrentPhoto();
-  if (!loc) return;
+  const item = getCurrentPhoto();
+  if (!item) return;
 
-  setPhotoBackground(loc.imgUrl);
-  els.locationName.textContent = buildCaption(loc);
-  updatePhotoCounter();
+  setPhotoBackground(item.imgUrl);
+  els.locationName.textContent = item.caption || item.titleClean || '世界の風景';
+  updateCounter();
 
-  if (loadedPhotos.length - currentIndex < 20) {
-    fillImagePool(loadedPhotos.length + 50);
+  const remain = loadedPhotos.length - currentIndex - 1;
+  if (remain <= REFILL_AT) {
+    fillImagePool(loadedPhotos.length + 12);
   }
 }
 
@@ -650,8 +647,8 @@ function preloadNext() {
     return;
   }
 
-  const nextLoc = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
-  if (!nextLoc) {
+  const item = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
+  if (!item) {
     nextReady = false;
     return;
   }
@@ -660,7 +657,7 @@ function preloadNext() {
   nextImage = new Image();
   nextImage.onload = () => { nextReady = true; };
   nextImage.onerror = () => { nextReady = false; };
-  nextImage.src = nextLoc.imgUrl;
+  nextImage.src = item.imgUrl;
 }
 
 function showPhotoAt(index) {
@@ -671,29 +668,28 @@ function showPhotoAt(index) {
   setProgress(0);
 
   currentIndex = (index + loadedPhotos.length) % loadedPhotos.length;
-
-  const loc = getCurrentPhoto();
-  if (!loc) return;
+  const item = getCurrentPhoto();
+  if (!item) return;
 
   setPhotoBackground('');
   els.locationName.textContent = '';
-  els.loader.style.display = 'block';
+  setLoader('Now Loading...', true);
 
   const temp = new Image();
   temp.onload = () => {
-    els.loader.style.display = 'none';
+    setLoader('', false);
     showCurrentPhoto();
     preloadNext();
     isPaused = false;
     updatePauseIcon();
   };
   temp.onerror = () => {
-    els.loader.style.display = 'none';
+    setLoader('', false);
     els.locationName.textContent = '画像の読み込みに失敗しました';
     isPaused = false;
     updatePauseIcon();
   };
-  temp.src = loc.imgUrl;
+  temp.src = item.imgUrl;
 }
 
 function attemptAutoNext() {
@@ -707,4 +703,177 @@ function attemptAutoNext() {
   if (!loadedPhotos.length) return;
 
   if (nextReady) {
-    currentIndex = (current
+    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    showCurrentPhoto();
+    preloadNext();
+    setProgress(0);
+  } else {
+    setProgress(100);
+  }
+}
+
+function manualNext() {
+  if (currentMode === 'news') {
+    newsIndex++;
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex + 1);
+}
+
+function manualPrev() {
+  if (currentMode === 'news') {
+    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex - 1);
+}
+
+async function loadNews() {
+  if (newsLoaded && cachedNews.length) {
+    showNewsItem();
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml');
+    const data = await res.json();
+    cachedNews = Array.isArray(data.items) ? data.items : [];
+    newsLoaded = true;
+    showNewsItem();
+  } catch (e) {
+    els.newsContent.innerHTML = "<h1 class='news-title'>News load failed.</h1>";
+    els.locationName.textContent = '世界ニュース速報 (BBC)';
+    updateCounter();
+  }
+}
+
+function showNewsItem() {
+  if (!cachedNews.length) {
+    els.newsContent.innerHTML = "<h1 class='news-title'>No news available.</h1>";
+    els.locationName.textContent = '世界ニュース速報 (BBC)';
+    updateCounter();
+    return;
+  }
+
+  const item = cachedNews[((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length];
+  const title = item.title || '';
+  const desc = stripHtml(item.description || '');
+  const shortDesc = desc.length > 300 ? desc.slice(0, 300) + '...' : desc;
+
+  els.newsContent.innerHTML = '';
+
+  const titleEl = document.createElement('h1');
+  titleEl.className = 'news-title';
+  titleEl.textContent = title;
+
+  const descEl = document.createElement('p');
+  descEl.className = 'news-desc';
+  descEl.textContent = shortDesc;
+
+  els.newsContent.appendChild(titleEl);
+  els.newsContent.appendChild(descEl);
+
+  if (item.link) {
+    const linkEl = document.createElement('a');
+    linkEl.className = 'news-link';
+    linkEl.href = item.link;
+    linkEl.target = '_blank';
+    linkEl.rel = 'noopener noreferrer';
+    linkEl.textContent = '記事を詳しく読む →';
+    els.newsContent.appendChild(linkEl);
+  }
+
+  els.locationName.textContent = '世界ニュース速報 (BBC)';
+  updateCounter();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+
+  els.tabPhoto.classList.toggle('active', mode === 'photo');
+  els.tabNews.classList.toggle('active', mode === 'news');
+  els.newsContainer.style.display = mode === 'news' ? 'flex' : 'none';
+
+  if (mode === 'news') {
+    setPhotoBackground('');
+    loadNews();
+  } else {
+    showCurrentPhoto();
+  }
+
+  setProgress(0);
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  updatePauseIcon();
+}
+
+function updatePauseIcon() {
+  els.pauseBtn.innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
+}
+
+function startTicker() {
+  if (tickerId !== null) return;
+
+  tickerId = setInterval(() => {
+    if (isPaused) return;
+
+    const duration = currentMode === 'photo' ? 40 : 25;
+
+    if (progress >= 100) {
+      if (currentMode === 'news' || nextReady) {
+        attemptAutoNext();
+      }
+      return;
+    }
+
+    setProgress(progress + (10 / duration));
+  }, 100);
+}
+
+async function initApp() {
+  if (initStarted) return;
+  initStarted = true;
+
+  els.startOverlay.style.cursor = 'default';
+  els.startOverlay.onclick = null;
+  els.startBtn.textContent = '収集中...';
+  setLoader('世界の風景を集めています...', true);
+
+  try {
+    await fillImagePool(MIN_POOL);
+
+    if (!loadedPhotos.length) {
+      throw new Error('no images');
+    }
+
+    shuffle(loadedPhotos);
+    currentIndex = 0;
+    showCurrentPhoto();
+    preloadNext();
+    startTicker();
+
+    els.startOverlay.style.display = 'none';
+    setLoader('', false);
+
+    fillImagePool(MIN_POOL + 18);
+  } catch (e) {
+    console.warn(e);
+    setLoader('', false);
+    els.startBtn.textContent = '再試行する';
+    els.startOverlay.onclick = initApp;
+    initStarted = false;
+  }
+}
+</script>
+</body>
+</html>
