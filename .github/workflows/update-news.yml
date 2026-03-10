@@ -1,0 +1,173 @@
+name: Update world news json
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  build-news-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser beautifulsoup4 requests python-dateutil
+
+      - name: Generate news.json
+        run: |
+          python <<'PY'
+          import json
+          import random
+          import time
+          from datetime import datetime, timezone
+          from email.utils import parsedate_to_datetime
+          from pathlib import Path
+
+          import feedparser
+          from bs4 import BeautifulSoup
+
+          FEEDS = [
+              {"region": "US", "source": "NPR World", "url": "https://feeds.npr.org/1004/rss.xml"},
+              {"region": "US", "source": "AP World", "url": "https://feeds.apnews.com/rss/apf-worldnews"},
+              {"region": "UK", "source": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
+              {"region": "Qatar", "source": "Al Jazeera", "url": "https://www.aljazeera.com/xml/rss/all.xml"},
+              {"region": "France", "source": "France 24", "url": "https://www.france24.com/en/rss"},
+              {"region": "Germany", "source": "DW", "url": "https://rss.dw.com/xml/rss-en-all"},
+              {"region": "Africa", "source": "Africanews", "url": "https://www.africanews.com/feed/rss"},
+              {"region": "Japan", "source": "The Japan Times", "url": "https://www.japantimes.co.jp/feed/topstories/"},
+              {"region": "India", "source": "The Hindu World", "url": "https://www.thehindu.com/news/international/feeder/default.rss"},
+              {"region": "Australia", "source": "ABC Australia", "url": "https://www.abc.net.au/news/feed/51120/rss.xml"},
+              {"region": "Singapore", "source": "CNA World", "url": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936"},
+              {"region": "Nigeria", "source": "Premium Times", "url": "https://www.premiumtimesng.com/feed"},
+              {"region": "South Africa", "source": "News24 World", "url": "https://feeds.24.com/articles/news24/World/rss"},
+              {"region": "Latin America", "source": "Buenos Aires Times", "url": "https://www.batimes.com.ar/feed"}
+          ]
+
+          OUT_PATH = Path("news.json")
+
+          def clean_html(value: str) -> str:
+              if not value:
+                  return ""
+              soup = BeautifulSoup(value, "html.parser")
+              return " ".join(soup.get_text(" ", strip=True).split())
+
+          def parse_date(value: str):
+              if not value:
+                  return None
+              try:
+                  dt = parsedate_to_datetime(value)
+                  if dt.tzinfo is None:
+                      dt = dt.replace(tzinfo=timezone.utc)
+                  return dt.astimezone(timezone.utc)
+              except Exception:
+                  return None
+
+          def title_source_split(title: str):
+              if not title:
+                  return title, ""
+              parts = [p.strip() for p in title.split(" - ") if p.strip()]
+              if len(parts) >= 2 and len(parts[-1]) < 60:
+                  return " - ".join(parts[:-1]).strip(), parts[-1]
+              return title.strip(), ""
+
+          def fetch_feed(feed):
+              parsed = feedparser.parse(feed["url"])
+              items = []
+
+              for entry in parsed.entries[:40]:
+                  title = getattr(entry, "title", "") or ""
+                  link = getattr(entry, "link", "") or ""
+                  summary = getattr(entry, "summary", "") or getattr(entry, "description", "") or ""
+                  published = (
+                      getattr(entry, "published", "")
+                      or getattr(entry, "updated", "")
+                      or ""
+                  )
+
+                  title2, source_from_title = title_source_split(title)
+                  description = clean_html(summary)
+
+                  item = {
+                      "title": title2,
+                      "description": description,
+                      "link": link,
+                      "pubDate": published,
+                      "source": source_from_title or feed["source"],
+                      "region": feed["region"]
+                  }
+
+                  if item["title"] and item["link"]:
+                      items.append(item)
+
+              return items
+
+          all_items = []
+          for feed in FEEDS:
+              try:
+                  all_items.extend(fetch_feed(feed))
+                  time.sleep(0.4)
+              except Exception as e:
+                  print(f"feed failed: {feed['source']} -> {e}")
+
+          seen = set()
+          deduped = []
+          for item in all_items:
+              key = (item["link"].strip().lower() or item["title"].strip().lower())
+              if not key or key in seen:
+                  continue
+              seen.add(key)
+              deduped.append(item)
+
+          def score(item):
+              dt = parse_date(item.get("pubDate", ""))
+              freshness = 0
+              if dt:
+                  age_hours = (datetime.now(timezone.utc) - dt).total_seconds() / 3600
+                  freshness = max(0, 120 - age_hours) / 120
+              return freshness + random.random() * 0.8
+
+          deduped.sort(key=score, reverse=True)
+
+          top = deduped[:120]
+          rest = deduped[120:]
+          random.shuffle(top)
+          random.shuffle(rest)
+
+          payload = {
+              "updatedAt": datetime.now(timezone.utc).isoformat(),
+              "count": len(top) + len(rest),
+              "items": top + rest
+          }
+
+          OUT_PATH.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2),
+              encoding="utf-8"
+          )
+
+          print(f"Wrote {OUT_PATH} with {payload['count']} items")
+          PY
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- news.json; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news.json
+          git commit -m "Update news.json"
+          git push
