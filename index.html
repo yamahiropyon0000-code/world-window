@@ -2,68 +2,235 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>World Window Pro ver 3.0.2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>World Window Pro ver 3.0.3</title>
 <style>
-  /* 漆黒ベースを徹底。赤は一切使いません */
-  * { margin: 0; padding: 0; box-sizing: border-box; background-color: transparent; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
   html, body {
-    background-color: #000000 !important; color: #e0e0e0;
+    background-color: #000;
+    color: #e0e0e0;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    height: 100dvh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
   }
 
   #startOverlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #000000 !important; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 1000; cursor: pointer;
+    position: fixed;
+    inset: 0;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    cursor: pointer;
   }
+
   .start-btn {
-    padding: 22px 60px; background-color: #5ba8f5 !important; color: #ffffff !important;
-    border-radius: 50px; font-size: 24px; font-weight: 800; border: none;
+    padding: 22px 60px;
+    background-color: #5ba8f5;
+    color: #fff;
+    border-radius: 50px;
+    font-size: 24px;
+    font-weight: 800;
+    border: none;
     box-shadow: 0 0 40px rgba(91, 168, 245, 0.2);
   }
-  .start-sub { color: #555; font-size: 14px; margin-top: 16px; }
 
-  header, footer { position: relative; z-index: 100; flex-shrink: 0; background-color: #0a0a0a !important; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 15px 25px; border-bottom: 1px solid #1a1a1a; }
-  .app-title { font-size: 20px; font-weight: 700; color: #ffffff; }
-  .mode-tabs { display: flex; gap: 6px; background-color: #222222 !important; border-radius: 10px; padding: 3px; }
-  .mode-tab { padding: 8px 18px; border-radius: 7px; border: none; color: #888; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .mode-tab.active { background-color: #ffffff !important; color: #000000 !important; }
+  .start-sub {
+    color: #555;
+    font-size: 14px;
+    margin-top: 16px;
+  }
 
-  /* 写真表示エリア：上が途切れないように contain へ変更 */
-  .content { 
-    flex: 1; position: relative; overflow: hidden; 
-    background-color: #000000 !important;
-    background-size: contain; /* 縦合わせで全景を表示。左右は黒帯になります */
-    background-position: center; 
+  header, footer {
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+    background-color: #0a0a0a;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 25px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .app-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    background-color: #222;
+    border-radius: 10px;
+    padding: 3px;
+  }
+
+  .mode-tab {
+    padding: 8px 18px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mode-tab.active {
+    background-color: #fff;
+    color: #000;
+  }
+
+  .content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #000;
+    background-size: contain;
+    background-position: center;
     background-repeat: no-repeat;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .news-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #000000 !important; display: none; flex-direction: column;
-    padding: 60px 40px; justify-content: center; z-index: 20;
+    position: absolute;
+    inset: 0;
+    background-color: #000;
+    display: none;
+    flex-direction: column;
+    padding: 60px 40px;
+    justify-content: center;
+    z-index: 20;
+    overflow-y: auto;
   }
-  .news-title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; line-height: 1.2; margin-bottom: 25px; color: #fff; }
-  .news-link { display: inline-block; margin-top: 30px; color: #5ba8f5 !important; font-size: 20px; text-decoration: none; border-bottom: 2px solid #5ba8f5; }
 
-  footer { padding: 25px 40px; padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px)); border-top: 1px solid #1a1a1a; }
-  .location-name { font-size: 26px; font-weight: 800; color: #ffffff; min-height: 1.2em; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-  
-  .progress-bar { width: 100%; height: 6px; background-color: #1a1a1a !important; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
-  #progressFill { height: 100%; background: #5ba8f5 !important; width: 0%; transition: width 0.1s linear; }
+  .news-title {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 25px;
+    color: #fff;
+  }
 
-  /* 標準的な音楽プレーヤー配置：I< ⏸ >I */
-  .controls { display: flex; align-items: center; justify-content: center; gap: 40px; }
-  .ctrl-btn { background-color: #222222 !important; border: none; color: #ffffff !important; width: 65px; height: 65px; border-radius: 50%; font-size: 26px; display: flex; align-items: center; justify-content: center; }
-  .play-pause-btn { width: 85px; height: 85px; font-size: 34px; background-color: #5ba8f5 !important; }
+  .news-desc {
+    font-size: 24px;
+    line-height: 1.6;
+    color: #ccc;
+  }
 
-  #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #555; display: none; z-index: 30; text-align: center; }
-  .version-tag { position: absolute; bottom: 8px; right: 120px; font-size: 10px; color: #333; }
-  .photo-count { position: absolute; bottom: 8px; left: 40px; font-size: 10px; color: #333; }
+  .news-link {
+    display: inline-block;
+    margin-top: 30px;
+    color: #5ba8f5;
+    font-size: 20px;
+    text-decoration: none;
+    border-bottom: 2px solid #5ba8f5;
+    width: fit-content;
+  }
+
+  footer {
+    padding: 25px 40px;
+    padding-bottom: calc(25px + env(safe-area-inset-bottom, 20px));
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .location-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    min-height: 1.2em;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background-color: #1a1a1a;
+    border-radius: 3px;
+    margin-bottom: 25px;
+    overflow: hidden;
+  }
+
+  #progressFill {
+    height: 100%;
+    background: #5ba8f5;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  .ctrl-btn {
+    background-color: #222;
+    border: none;
+    color: #fff;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .play-pause-btn {
+    width: 85px;
+    height: 85px;
+    font-size: 34px;
+    background-color: #5ba8f5;
+  }
+
+  #loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    color: #555;
+    display: none;
+    z-index: 30;
+    text-align: center;
+  }
+
+  .version-tag {
+    position: absolute;
+    bottom: 8px;
+    right: 120px;
+    font-size: 10px;
+    color: #333;
+  }
+
+  .photo-count {
+    position: absolute;
+    bottom: 8px;
+    left: 40px;
+    font-size: 10px;
+    color: #333;
+  }
 </style>
 </head>
 <body>
@@ -97,16 +264,22 @@
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
   <span class="photo-count" id="photoCount"></span>
-  <div class="version-tag">ver 3.0.2</div>
+  <div class="version-tag">ver 3.0.3</div>
 </footer>
 
 <script>
-let currentMode = 'photo', isPaused = false, progress = 0;
-let currentIndex = 0, cachedNews = [], newsIndex = 0;
-let nextImage = new Image(), nextReady = false;
+let currentMode = 'photo';
+let isPaused = false;
+let progress = 0;
+let currentIndex = 0;
+let cachedNews = [];
+let newsIndex = 0;
+let nextImage = new Image();
+let nextReady = false;
 let loadedPhotos = [];
+let tickerId = null;
+let newsLoaded = false;
 
-// Wikipediaスラッグ指定のリスト
 const locations = [
   { c: "日本", t: "東京", s: "東京タワー", w: "Tokyo_Tower" },
   { c: "日本", t: "京都", s: "金閣寺", w: "Kinkaku-ji" },
@@ -119,8 +292,22 @@ const locations = [
   { c: "ギリシャ", t: "アテネ", s: "パルテノン神殿", w: "Parthenon" },
   { c: "アメリカ", t: "ニューヨーク", s: "自由の女神", w: "Statue_of_Liberty" },
   { c: "イギリス", t: "ロンドン", s: "ビッグ・ベン", w: "Big_Ben" }
-  // (実際のコードでは ver 3.0.1 の全90件以上をここに含めます)
 ];
+
+const els = {
+  startOverlay: document.getElementById('startOverlay'),
+  startBtn: document.querySelector('#startOverlay .start-btn'),
+  mainView: document.getElementById('mainView'),
+  locationName: document.getElementById('locationName'),
+  photoCount: document.getElementById('photoCount'),
+  progressFill: document.getElementById('progressFill'),
+  loader: document.getElementById('loader'),
+  newsContainer: document.getElementById('newsContainer'),
+  newsContent: document.getElementById('newsContent'),
+  pauseBtn: document.getElementById('pauseBtn'),
+  tabPhoto: document.getElementById('tabPhoto'),
+  tabNews: document.getElementById('tabNews')
+};
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -131,146 +318,298 @@ function shuffle(array) {
 
 function formatCaption(loc) {
   if (!loc) return "";
-  let p = [];
-  if (loc.c) p.push(loc.c);
-  if (loc.t && loc.t !== loc.c) p.push(loc.t);
-  if (loc.s) p.push(loc.s);
-  return p.join(" / ");
+  const parts = [];
+  if (loc.c) parts.push(loc.c);
+  if (loc.t && loc.t !== loc.c) parts.push(loc.t);
+  if (loc.s) parts.push(loc.s);
+  return parts.join(" / ");
 }
 
-// Wikipedia APIで写真を取得
+function normalizeWikiTitle(slug) {
+  return decodeURIComponent(slug).replace(/_/g, ' ');
+}
+
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+function setProgress(value) {
+  progress = Math.max(0, Math.min(100, value));
+  els.progressFill.style.width = progress + '%';
+}
+
+function getCurrentPhoto() {
+  if (!loadedPhotos.length) return null;
+  return loadedPhotos[currentIndex % loadedPhotos.length];
+}
+
+function setPhotoBackground(url) {
+  els.mainView.style.backgroundImage = url ? `url("${url}")` : 'none';
+}
+
 async function fetchWikiImages(entries) {
   const batchSize = 50;
+
   for (let i = 0; i < entries.length; i += batchSize) {
     const batch = entries.slice(i, i + batchSize);
-    const titles = batch.map(e => decodeURIComponent(e.w)).join('|');
+    const titleMap = new Map();
+
+    for (const entry of batch) {
+      titleMap.set(normalizeWikiTitle(entry.w), entry);
+    }
+
+    const titles = batch.map(e => normalizeWikiTitle(e.w)).join('|');
+
     try {
       const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles).replace(/%7C/g, '|')}&prop=pageimages&format=json&pithumbsize=1600&origin=*`;
       const res = await fetch(url);
       const data = await res.json();
+
       if (!data.query || !data.query.pages) continue;
+
       const pages = data.query.pages;
       for (const pageId in pages) {
         const page = pages[pageId];
-        if (!page.thumbnail) continue;
-        batch.forEach(entry => {
-          if (page.title.includes(decodeURIComponent(entry.w).replace(/_/g, ' '))) {
-            entry.imgUrl = page.thumbnail.source;
-          }
-        });
+        const entry = titleMap.get(page.title);
+        if (entry && page.thumbnail && page.thumbnail.source) {
+          entry.imgUrl = page.thumbnail.source;
+        }
       }
-    } catch(e) { console.warn('Wiki API failed:', e); }
+    } catch (e) {
+      console.warn('Wiki API failed:', e);
+    }
   }
 }
 
 async function initApp() {
-  const overlay = document.getElementById('startOverlay');
-  overlay.querySelector('.start-btn').textContent = '収集完了...';
-  overlay.style.cursor = 'default';
-  overlay.onclick = null;
+  els.startBtn.textContent = '収集完了...';
+  els.startOverlay.style.cursor = 'default';
+  els.startOverlay.onclick = null;
 
   await fetchWikiImages(locations);
   loadedPhotos = locations.filter(e => e.imgUrl);
   shuffle(loadedPhotos);
-  
-  overlay.style.display = 'none';
-  if (loadedPhotos.length > 0) {
-    showCurrentPhoto();
-    preloadNext();
-    startTicker();
+
+  els.startOverlay.style.display = 'none';
+
+  if (loadedPhotos.length === 0) {
+    els.locationName.textContent = '画像を取得できませんでした';
+    els.photoCount.textContent = '0 / 0';
+    return;
   }
+
+  showCurrentPhoto();
+  preloadNext();
+  startTicker();
 }
 
 function showCurrentPhoto() {
-  const loc = loadedPhotos[currentIndex % loadedPhotos.length];
-  document.getElementById('mainView').style.backgroundImage = `url('${loc.imgUrl}')`;
-  document.getElementById('locationName').textContent = formatCaption(loc);
-  document.getElementById('photoCount').textContent = `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`;
+  const loc = getCurrentPhoto();
+  if (!loc) return;
+
+  setPhotoBackground(loc.imgUrl);
+  els.locationName.textContent = formatCaption(loc);
+  els.photoCount.textContent = `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`;
 }
 
 function preloadNext() {
+  if (!loadedPhotos.length) {
+    nextReady = false;
+    return;
+  }
+
+  const nextLoc = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
   nextReady = false;
-  const nl = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
   nextImage = new Image();
-  nextImage.onload = () => { nextReady = true; };
-  nextImage.src = nl.imgUrl;
+  nextImage.onload = () => {
+    nextReady = true;
+  };
+  nextImage.onerror = () => {
+    nextReady = false;
+  };
+  nextImage.src = nextLoc.imgUrl;
 }
 
-function attemptAutoNext() {
-  if (currentMode === 'news') { newsIndex++; showNewsItem(); progress = 0; return; }
-  if (nextReady) {
-    currentIndex++;
-    showCurrentPhoto();
-    progress = 0;
-    preloadNext();
-  } else { progress = 100; }
-}
+function showPhotoAt(index) {
+  if (!loadedPhotos.length) return;
 
-function manualNext() {
-  isPaused = true; progress = 0;
-  document.getElementById('progressFill').style.width = '0%';
-  if (currentMode === 'news') { newsIndex++; showNewsItem(); isPaused = false; return; }
-  
-  const mv = document.getElementById('mainView');
-  const nl = document.getElementById('locationName');
-  const ld = document.getElementById('loader');
-  mv.style.backgroundImage = 'none'; nl.textContent = ''; ld.style.display = 'block';
+  isPaused = true;
+  updatePauseIcon();
+  setProgress(0);
 
-  currentIndex++;
-  const loc = loadedPhotos[currentIndex % loadedPhotos.length];
+  currentIndex = (index + loadedPhotos.length) % loadedPhotos.length;
+
+  const loc = getCurrentPhoto();
+  if (!loc) return;
+
+  setPhotoBackground('');
+  els.locationName.textContent = '';
+  els.loader.style.display = 'block';
+
   const temp = new Image();
   temp.onload = () => {
-    ld.style.display = 'none';
+    els.loader.style.display = 'none';
     showCurrentPhoto();
+    preloadNext();
     isPaused = false;
     updatePauseIcon();
-    preloadNext();
+  };
+  temp.onerror = () => {
+    els.loader.style.display = 'none';
+    els.locationName.textContent = '画像の読み込みに失敗しました';
+    isPaused = false;
+    updatePauseIcon();
   };
   temp.src = loc.imgUrl;
 }
 
-function manualPrev() { currentIndex = (currentIndex - 1 + loadedPhotos.length) % loadedPhotos.length; manualNext(); }
+function attemptAutoNext() {
+  if (currentMode === 'news') {
+    newsIndex++;
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+
+  if (nextReady) {
+    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    showCurrentPhoto();
+    preloadNext();
+    setProgress(0);
+  } else {
+    setProgress(100);
+  }
+}
+
+function manualNext() {
+  if (currentMode === 'news') {
+    newsIndex++;
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex + 1);
+}
+
+function manualPrev() {
+  if (currentMode === 'news') {
+    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
+    showNewsItem();
+    setProgress(0);
+    return;
+  }
+
+  if (!loadedPhotos.length) return;
+  showPhotoAt(currentIndex - 1);
+}
 
 async function loadNews() {
+  if (newsLoaded && cachedNews.length) {
+    showNewsItem();
+    return;
+  }
+
   try {
     const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
     const data = await res.json();
-    cachedNews = data.items;
+    cachedNews = Array.isArray(data.items) ? data.items : [];
+    newsLoaded = true;
     showNewsItem();
-  } catch(e) { document.getElementById('newsContent').innerHTML = "<h1>News load failed.</h1>"; }
+  } catch (e) {
+    els.newsContent.innerHTML = "<h1 class='news-title'>News load failed.</h1>";
+  }
 }
 
 function showNewsItem() {
-  if (!cachedNews.length) return;
-  const item = cachedNews[newsIndex % cachedNews.length];
-  document.getElementById('newsContent').innerHTML = `
-    <h1 class="news-title">${item.title}</h1>
-    <p style="font-size:24px; line-height:1.6; color:#cccccc;">${item.description.replace(/<[^>]*>/g, '').substring(0, 300)}...</p>
-    <a href="${item.link}" class="news-link" target="_blank">記事を詳しく読む →</a>
-  `;
-  document.getElementById('locationName').textContent = "世界ニュース速報 (BBC)";
+  if (!cachedNews.length) {
+    els.newsContent.innerHTML = "<h1 class='news-title'>No news available.</h1>";
+    els.locationName.textContent = "世界ニュース速報 (BBC)";
+    return;
+  }
+
+  const item = cachedNews[((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length];
+  const title = item.title || '';
+  const desc = stripHtml(item.description || '').trim();
+  const shortDesc = desc.length > 300 ? desc.substring(0, 300) + '...' : desc;
+
+  els.newsContent.innerHTML = '';
+
+  const titleEl = document.createElement('h1');
+  titleEl.className = 'news-title';
+  titleEl.textContent = title;
+
+  const descEl = document.createElement('p');
+  descEl.className = 'news-desc';
+  descEl.textContent = shortDesc;
+
+  const linkEl = document.createElement('a');
+  linkEl.className = 'news-link';
+  linkEl.target = '_blank';
+  linkEl.rel = 'noopener noreferrer';
+  linkEl.href = item.link || '#';
+  linkEl.textContent = '記事を詳しく読む →';
+
+  els.newsContent.appendChild(titleEl);
+  els.newsContent.appendChild(descEl);
+  if (item.link) {
+    els.newsContent.appendChild(linkEl);
+  }
+
+  els.locationName.textContent = "世界ニュース速報 (BBC)";
+  els.photoCount.textContent = `${((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length + 1} / ${cachedNews.length}`;
 }
 
-function switchMode(m) {
-  currentMode = m;
-  document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
-  document.getElementById('tabNews').classList.toggle('active', m === 'news');
-  document.getElementById('newsContainer').style.display = (m === 'news') ? 'flex' : 'none';
-  if (m === 'news') { document.getElementById('mainView').style.backgroundImage = 'none'; loadNews(); }
-  else { showCurrentPhoto(); }
-  progress = 0;
+function switchMode(mode) {
+  currentMode = mode;
+
+  els.tabPhoto.classList.toggle('active', mode === 'photo');
+  els.tabNews.classList.toggle('active', mode === 'news');
+  els.newsContainer.style.display = mode === 'news' ? 'flex' : 'none';
+
+  if (mode === 'news') {
+    setPhotoBackground('');
+    loadNews();
+  } else {
+    showCurrentPhoto();
+    els.photoCount.textContent = loadedPhotos.length
+      ? `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`
+      : '0 / 0';
+  }
+
+  setProgress(0);
 }
 
-function togglePause() { isPaused = !isPaused; updatePauseIcon(); }
-function updatePauseIcon() { document.getElementById('pauseBtn').innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;'; }
+function togglePause() {
+  isPaused = !isPaused;
+  updatePauseIcon();
+}
+
+function updatePauseIcon() {
+  els.pauseBtn.innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
+}
 
 function startTicker() {
-  setInterval(() => {
+  if (tickerId !== null) return;
+
+  tickerId = setInterval(() => {
     if (isPaused) return;
-    const l = (currentMode === 'photo' ? 45 : 25);
-    if (progress >= 100) { if (nextReady || currentMode === 'news') attemptAutoNext(); return; }
-    progress += (10 / l);
-    document.getElementById('progressFill').style.width = Math.min(progress, 100) + '%';
+
+    const duration = currentMode === 'photo' ? 45 : 25;
+
+    if (progress >= 100) {
+      if (currentMode === 'news' || nextReady) {
+        attemptAutoNext();
+      }
+      return;
+    }
+
+    setProgress(progress + (10 / duration));
   }, 100);
 }
 </script>
