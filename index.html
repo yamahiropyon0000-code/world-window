@@ -284,7 +284,7 @@
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
   <span class="photo-count" id="photoCount" translate="no"></span>
-  <div class="version-tag" translate="no">live-a1</div>
+  <div class="version-tag" translate="no">live-b1</div>
 </footer>
 
 <script>
@@ -302,15 +302,22 @@ let newsLoaded = false;
 let initStarted = false;
 let isFillingPool = false;
 let alternateStep = 'photo';
+let isSwitching = false;
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
-const INITIAL_POOL = 8;
-const MIN_POOL = 18;
-const REFILL_AT = 6;
-const REFILL_ADD = 12;
+
+const INITIAL_POOL = 16;
+const MIN_POOL = 80;
+const REFILL_AT = 20;
+const REFILL_ADD = 40;
+const MAX_POOL = 220;
+const RECENT_HISTORY_LIMIT = 200;
 
 const PHOTO_DURATION = 20;
 const NEWS_DURATION = 12.5;
+
+const recentPhotoIds = [];
+const allSeenPhotoIds = new Set();
 
 const SOURCE_CATEGORIES = [
   'Category:Featured pictures of cityscapes',
@@ -319,7 +326,16 @@ const SOURCE_CATEGORIES = [
   'Category:Featured pictures of skylines',
   'Category:Featured pictures of beaches',
   'Category:Featured pictures of rivers',
-  'Category:Featured pictures of villages'
+  'Category:Featured pictures of villages',
+  'Category:Featured pictures of forests',
+  'Category:Featured pictures of islands',
+  'Category:Featured pictures of harbours',
+  'Category:Featured pictures of waterfalls',
+  'Category:Featured pictures of canyons',
+  'Category:Featured pictures of deserts',
+  'Category:Featured pictures of old towns',
+  'Category:Featured pictures of valleys',
+  'Category:Featured pictures of coastlines'
 ];
 
 const categoryCursor = {};
@@ -406,6 +422,19 @@ function setLoader(text, show = true) {
   els.loader.style.display = show ? 'block' : 'none';
 }
 
+function rememberShownPhoto(id) {
+  if (!id) return;
+  allSeenPhotoIds.add(id);
+  recentPhotoIds.push(id);
+  if (recentPhotoIds.length > RECENT_HISTORY_LIMIT) {
+    recentPhotoIds.shift();
+  }
+}
+
+function isRecentlyShown(id) {
+  return recentPhotoIds.includes(id);
+}
+
 function categoryText(page) {
   return (page.categories || [])
     .map(c => (c.title || '').replace(/^Category:/i, ''))
@@ -449,12 +478,16 @@ function extractTheme(text) {
   const t = (text || '').toLowerCase();
   if (t.includes('cityscape') || t.includes('skyline')) return '街並み';
   if (t.includes('village') || t.includes('old town')) return '村や旧市街';
-  if (t.includes('mountain') || t.includes('alps') || t.includes('himalaya')) return '山の風景';
+  if (t.includes('mountain') || t.includes('alps') || t.includes('himalaya') || t.includes('valley')) return '山の風景';
   if (t.includes('lake')) return '湖';
   if (t.includes('river')) return '川辺';
-  if (t.includes('beach') || t.includes('coast') || t.includes('shore')) return '海辺';
+  if (t.includes('beach') || t.includes('coast') || t.includes('shore') || t.includes('coastline')) return '海辺';
   if (t.includes('harbour') || t.includes('harbor') || t.includes('port')) return '港';
   if (t.includes('forest')) return '森';
+  if (t.includes('waterfall')) return '滝';
+  if (t.includes('desert')) return '砂漠';
+  if (t.includes('island')) return '島';
+  if (t.includes('canyon') || t.includes('gorge')) return '渓谷';
   return '世界の風景';
 }
 
@@ -577,21 +610,29 @@ async function loadFromCategories() {
   let files = [];
 
   try {
-    files = await fetchCategoryFiles(category, 20);
+    files = await fetchCategoryFiles(category, 36);
   } catch (e) {
     console.warn('Category fetch failed:', category, e);
     return [];
   }
 
   shuffle(files);
-  const titles = files.slice(0, 12).map(f => f.title);
+  const titles = files.slice(0, 24).map(f => f.title);
 
   try {
     const pages = await fetchFileInfo(titles);
-    return pages
+    const items = pages
       .filter(page => !looksLikeBadImage(page))
       .map(pageToPhotoItem)
       .filter(Boolean);
+
+    items.sort((a, b) => {
+      const aRecent = isRecentlyShown(a.id) ? 1 : 0;
+      const bRecent = isRecentlyShown(b.id) ? 1 : 0;
+      return aRecent - bRecent;
+    });
+
+    return items;
   } catch (e) {
     console.warn('File info fetch failed:', e);
     return [];
@@ -602,7 +643,7 @@ async function loadFromRandomFallback() {
   let files = [];
 
   try {
-    files = await fetchRandomFiles(16);
+    files = await fetchRandomFiles(24);
   } catch (e) {
     console.warn('Random file fetch failed:', e);
     return [];
@@ -612,13 +653,38 @@ async function loadFromRandomFallback() {
 
   try {
     const pages = await fetchFileInfo(titles);
-    return pages
+    const items = pages
       .filter(page => !looksLikeBadImage(page))
       .map(pageToPhotoItem)
       .filter(Boolean);
+
+    items.sort((a, b) => {
+      const aRecent = isRecentlyShown(a.id) ? 1 : 0;
+      const bRecent = isRecentlyShown(b.id) ? 1 : 0;
+      return aRecent - bRecent;
+    });
+
+    return items;
   } catch (e) {
     console.warn('Random file info fetch failed:', e);
     return [];
+  }
+}
+
+function trimPoolIfNeeded() {
+  if (loadedPhotos.length <= MAX_POOL) return;
+
+  const currentId = getCurrentPhoto()?.id;
+  const nextId = loadedPhotos[(currentIndex + 1) % loadedPhotos.length]?.id;
+
+  loadedPhotos = loadedPhotos.filter((item, idx) => {
+    if (item.id === currentId || item.id === nextId) return true;
+    return idx >= currentIndex - 2;
+  });
+
+  if (loadedPhotos.length > MAX_POOL) {
+    loadedPhotos = loadedPhotos.slice(currentIndex, currentIndex + MAX_POOL);
+    currentIndex = 0;
   }
 }
 
@@ -629,28 +695,44 @@ async function fillImagePool(targetCount = MIN_POOL) {
   isFillingPool = true;
 
   try {
-    const seen = new Set(loadedPhotos.map(p => p.id));
+    const inPool = new Set(loadedPhotos.map(p => p.id));
     let safety = 0;
 
-    while (loadedPhotos.length < targetCount && safety < 6) {
+    while (loadedPhotos.length < targetCount && safety < 12) {
       safety++;
 
       let items = await loadFromCategories();
-      if (items.length < 3) {
+      if (items.length < 6) {
         const fallback = await loadFromRandomFallback();
         items = items.concat(fallback);
       }
 
-      for (const item of items) {
-        if (!seen.has(item.id)) {
-          seen.add(item.id);
+      items = items.filter(item => !inPool.has(item.id));
+
+      const fresh = items.filter(item => !isRecentlyShown(item.id));
+      const older = items.filter(item => isRecentlyShown(item.id));
+      const ordered = fresh.concat(older);
+
+      for (const item of ordered) {
+        if (!inPool.has(item.id)) {
+          inPool.add(item.id);
           loadedPhotos.push(item);
         }
       }
     }
+
+    trimPoolIfNeeded();
   } finally {
     isFillingPool = false;
   }
+}
+
+function rebalanceCurrentIndex() {
+  if (!loadedPhotos.length) {
+    currentIndex = 0;
+    return;
+  }
+  currentIndex = ((currentIndex % loadedPhotos.length) + loadedPhotos.length) % loadedPhotos.length;
 }
 
 function showCurrentPhoto() {
@@ -662,10 +744,36 @@ function showCurrentPhoto() {
   els.locationName.textContent = item.caption || item.titleClean || '世界の風景';
   updateCounter();
 
+  rememberShownPhoto(item.id);
+
   const remain = loadedPhotos.length - currentIndex - 1;
   if (remain <= REFILL_AT) {
-    fillImagePool(Math.max(MIN_POOL, loadedPhotos.length + REFILL_ADD));
+    fillImagePool(Math.min(MAX_POOL, Math.max(MIN_POOL, loadedPhotos.length + REFILL_ADD)));
   }
+}
+
+function chooseBestNextPhotoIndex(direction = 1) {
+  if (!loadedPhotos.length) return 0;
+  if (loadedPhotos.length === 1) return 0;
+
+  const candidates = [];
+  const scanCount = Math.min(18, loadedPhotos.length - 1);
+
+  for (let offset = 1; offset <= scanCount; offset++) {
+    const idx = direction > 0
+      ? (currentIndex + offset) % loadedPhotos.length
+      : (currentIndex - offset + loadedPhotos.length) % loadedPhotos.length;
+
+    const item = loadedPhotos[idx];
+    if (!item) continue;
+
+    const recentPenalty = isRecentlyShown(item.id) ? 100 : 0;
+    const score = recentPenalty + offset;
+    candidates.push({ idx, score });
+  }
+
+  candidates.sort((a, b) => a.score - b.score);
+  return candidates.length ? candidates[0].idx : ((currentIndex + direction + loadedPhotos.length) % loadedPhotos.length);
 }
 
 function preloadNext() {
@@ -674,7 +782,8 @@ function preloadNext() {
     return;
   }
 
-  const item = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
+  const nextIdx = chooseBestNextPhotoIndex(1);
+  const item = loadedPhotos[nextIdx];
   if (!item) {
     nextReady = false;
     return;
@@ -687,14 +796,16 @@ function preloadNext() {
   nextImage.src = item.imgUrl;
 }
 
-function showPhotoAt(index) {
+function showPhotoAtIndex(targetIndex) {
   if (!loadedPhotos.length) return;
 
   isPaused = true;
   updatePauseIcon();
   setProgress(0);
 
-  currentIndex = (index + loadedPhotos.length) % loadedPhotos.length;
+  currentIndex = targetIndex;
+  rebalanceCurrentIndex();
+
   const item = getCurrentPhoto();
   if (!item) return;
 
@@ -796,7 +907,7 @@ async function showNewsAtCurrentIndex() {
   setPhotoBackground('');
 
   if (!cachedNews.length) {
-    els.newsContent.innerHTML = "<h1 class='news-title'>News data not ready yet.</h1><p class='news-desc'>GitHub Actionsで news.json を生成したあとに表示されます。</p>";
+    els.newsContent.innerHTML = "<h1 class='news-title'>News data not ready yet.</h1><p class='news-desc'>news.json の更新を待っています。</p>";
     els.locationName.textContent = '世界ニュース速報';
     updateCounter();
     return;
@@ -869,7 +980,7 @@ async function advanceAlternateForward() {
     await advanceNewsForward();
   } else {
     alternateStep = 'photo';
-    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    currentIndex = chooseBestNextPhotoIndex(1);
     showCurrentPhoto();
     preloadNext();
   }
@@ -882,7 +993,7 @@ async function advanceAlternateBackward() {
     await advanceNewsBackward();
   } else {
     alternateStep = 'photo';
-    currentIndex = (currentIndex - 1 + loadedPhotos.length) % loadedPhotos.length;
+    currentIndex = chooseBestNextPhotoIndex(-1);
     showCurrentPhoto();
     preloadNext();
   }
@@ -890,26 +1001,29 @@ async function advanceAlternateBackward() {
 }
 
 async function attemptAutoNext() {
-  if (currentMode === 'news') {
-    await advanceNewsForward();
-    setProgress(0);
-    return;
-  }
+  if (isSwitching) return;
+  isSwitching = true;
 
-  if (currentMode === 'alternate') {
-    await advanceAlternateForward();
-    return;
-  }
+  try {
+    if (currentMode === 'news') {
+      await advanceNewsForward();
+      setProgress(0);
+      return;
+    }
 
-  if (!loadedPhotos.length) return;
+    if (currentMode === 'alternate') {
+      await advanceAlternateForward();
+      return;
+    }
 
-  if (nextReady) {
-    currentIndex = (currentIndex + 1) % loadedPhotos.length;
+    if (!loadedPhotos.length) return;
+
+    currentIndex = chooseBestNextPhotoIndex(1);
     showCurrentPhoto();
     preloadNext();
     setProgress(0);
-  } else {
-    setProgress(100);
+  } finally {
+    isSwitching = false;
   }
 }
 
@@ -926,7 +1040,7 @@ async function manualNext() {
   }
 
   if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex + 1);
+  showPhotoAtIndex(chooseBestNextPhotoIndex(1));
 }
 
 async function manualPrev() {
@@ -942,7 +1056,7 @@ async function manualPrev() {
   }
 
   if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex - 1);
+  showPhotoAtIndex(chooseBestNextPhotoIndex(-1));
 }
 
 function togglePause() {
@@ -958,7 +1072,7 @@ function startTicker() {
   if (tickerId !== null) return;
 
   tickerId = setInterval(() => {
-    if (isPaused) return;
+    if (isPaused || isSwitching) return;
 
     const displayMode = getCurrentDisplayMode();
     const duration = displayMode === 'news' ? NEWS_DURATION : PHOTO_DURATION;
@@ -979,7 +1093,7 @@ async function initApp() {
   els.startOverlay.style.cursor = 'default';
   els.startOverlay.onclick = null;
   els.startBtn.textContent = '収集中...';
-  setLoader('最初の数枚を集めています...', true);
+  setLoader('最初の風景を集めています...', true);
 
   try {
     await fillImagePool(INITIAL_POOL);
@@ -989,7 +1103,8 @@ async function initApp() {
     }
 
     shuffle(loadedPhotos);
-    currentIndex = 0;
+    rebalanceCurrentIndex();
+    currentIndex = chooseBestNextPhotoIndex(1) % loadedPhotos.length;
     showCurrentPhoto();
     preloadNext();
     startTicker();
