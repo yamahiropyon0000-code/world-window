@@ -91,11 +91,7 @@ jobs:
                   title = getattr(entry, "title", "") or ""
                   link = getattr(entry, "link", "") or ""
                   summary = getattr(entry, "summary", "") or getattr(entry, "description", "") or ""
-                  published = (
-                      getattr(entry, "published", "")
-                      or getattr(entry, "updated", "")
-                      or ""
-                  )
+                  published = getattr(entry, "published", "") or getattr(entry, "updated", "") or ""
 
                   title2, source_from_title = title_source_split(title)
                   description = clean_html(summary)
@@ -160,7 +156,7 @@ jobs:
           print(f"Wrote {OUT_PATH} with {payload['count']} items")
           PY
 
-            - name: Commit and push if changed
+      - name: Commit and push if changed
         run: |
           if [ -z "$(git status --porcelain -- news.json)" ]; then
             echo "No changes"
