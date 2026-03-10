@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>World Window Pro ver 3.0.3</title>
+<title>World Window Pro ver 3.0.4</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -237,7 +237,7 @@
 
 <div id="startOverlay" onclick="initApp()">
   <button class="start-btn">旅を開始する</button>
-  <p class="start-sub">世界100箇所以上の名所を収集します</p>
+  <p class="start-sub">世界中の街や風景を収集します</p>
 </div>
 
 <header translate="no">
@@ -264,7 +264,7 @@
     <button class="ctrl-btn" onclick="manualNext()">&#9197;</button>
   </div>
   <span class="photo-count" id="photoCount"></span>
-  <div class="version-tag">ver 3.0.3</div>
+  <div class="version-tag">ver 3.0.4</div>
 </footer>
 
 <script>
@@ -279,19 +279,19 @@ let nextReady = false;
 let loadedPhotos = [];
 let tickerId = null;
 let newsLoaded = false;
+let isFillingPool = false;
 
-const locations = [
-  { c: "日本", t: "東京", s: "東京タワー", w: "Tokyo_Tower" },
-  { c: "日本", t: "京都", s: "金閣寺", w: "Kinkaku-ji" },
-  { c: "日本", t: "富士山", s: "富士山", w: "Mount_Fuji" },
-  { c: "中国", t: "北京", s: "万里の長城", w: "Great_Wall_of_China" },
-  { c: "フランス", t: "パリ", s: "エッフェル塔", w: "Eiffel_Tower" },
-  { c: "イタリア", t: "ローマ", s: "コロッセオ", w: "Colosseum" },
-  { c: "エジプト", t: "ギザ", s: "大ピラミッド", w: "Great_Pyramid_of_Giza" },
-  { c: "スペイン", t: "バルセロナ", s: "サグラダ・ファミリア", w: "Sagrada_Fam%C3%ADlia" },
-  { c: "ギリシャ", t: "アテネ", s: "パルテノン神殿", w: "Parthenon" },
-  { c: "アメリカ", t: "ニューヨーク", s: "自由の女神", w: "Statue_of_Liberty" },
-  { c: "イギリス", t: "ロンドン", s: "ビッグ・ベン", w: "Big_Ben" }
+const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+
+const SEED_CATEGORIES = [
+  'Category:Featured pictures of cityscapes',
+  'Category:Cityscapes by country',
+  'Category:Villages by country',
+  'Category:Ports and harbours by country',
+  'Category:Mountains by country',
+  'Category:Lakes by country',
+  'Category:Rivers by country',
+  'Category:Beaches by country'
 ];
 
 const els = {
@@ -316,23 +316,15 @@ function shuffle(array) {
   }
 }
 
-function formatCaption(loc) {
-  if (!loc) return "";
-  const parts = [];
-  if (loc.c) parts.push(loc.c);
-  if (loc.t && loc.t !== loc.c) parts.push(loc.t);
-  if (loc.s) parts.push(loc.s);
-  return parts.join(" / ");
-}
-
-function normalizeWikiTitle(slug) {
-  return decodeURIComponent(slug).replace(/_/g, ' ');
+function sample(array) {
+  if (!array || !array.length) return null;
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 function stripHtml(html) {
   const div = document.createElement('div');
-  div.innerHTML = html;
-  return div.textContent || div.innerText || '';
+  div.innerHTML = html || '';
+  return (div.textContent || div.innerText || '').trim();
 }
 
 function setProgress(value) {
@@ -340,61 +332,293 @@ function setProgress(value) {
   els.progressFill.style.width = progress + '%';
 }
 
+function setPhotoBackground(url) {
+  els.mainView.style.backgroundImage = url ? `url("${url}")` : 'none';
+}
+
 function getCurrentPhoto() {
   if (!loadedPhotos.length) return null;
   return loadedPhotos[currentIndex % loadedPhotos.length];
 }
 
-function setPhotoBackground(url) {
-  els.mainView.style.backgroundImage = url ? `url("${url}")` : 'none';
+function updatePhotoCounter() {
+  if (currentMode === 'news') {
+    els.photoCount.textContent = cachedNews.length
+      ? `${((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length + 1} / ${cachedNews.length}`
+      : '0 / 0';
+    return;
+  }
+
+  els.photoCount.textContent = loadedPhotos.length
+    ? `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`
+    : '0 / 0';
 }
 
-async function fetchWikiImages(entries) {
-  const batchSize = 50;
+function cleanFileTitle(title) {
+  return decodeURIComponent(
+    (title || '')
+      .replace(/^File:/i, '')
+      .replace(/\.[a-z0-9]{2,5}$/i, '')
+      .replace(/[_]+/g, ' ')
+  ).trim();
+}
 
-  for (let i = 0; i < entries.length; i += batchSize) {
-    const batch = entries.slice(i, i + batchSize);
-    const titleMap = new Map();
+function shortenText(text, maxLen = 110) {
+  const s = (text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return '';
+  return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
+}
 
-    for (const entry of batch) {
-      titleMap.set(normalizeWikiTitle(entry.w), entry);
-    }
+function buildCaption(item) {
+  if (!item) return '';
+  if (item.captionJa) return item.captionJa;
+  if (item.caption) return item.caption;
 
-    const titles = batch.map(e => normalizeWikiTitle(e.w)).join('|');
+  const parts = [];
+  if (item.place) parts.push(item.place);
+  if (item.theme) parts.push(item.theme);
+  if (item.titleClean) parts.push(item.titleClean);
+  return parts.join(' / ');
+}
 
+async function apiFetch(params) {
+  const url = new URL(COMMONS_API);
+  Object.entries({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    ...params
+  }).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchCategoryMembers(categoryTitle, type = 'subcat', limit = 40) {
+  const data = await apiFetch({
+    list: 'categorymembers',
+    cmtitle: categoryTitle,
+    cmtype: type,
+    cmlimit: String(limit)
+  });
+  return data?.query?.categorymembers || [];
+}
+
+async function pickCategoryWithFiles(seedCategory) {
+  let current = seedCategory;
+
+  for (let depth = 0; depth < 3; depth++) {
+    let files = [];
     try {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles).replace(/%7C/g, '|')}&prop=pageimages&format=json&pithumbsize=1600&origin=*`;
-      const res = await fetch(url);
-      const data = await res.json();
+      files = await fetchCategoryMembers(current, 'file', 30);
+    } catch (_) {}
 
-      if (!data.query || !data.query.pages) continue;
+    if (files.length >= 8) return current;
 
-      const pages = data.query.pages;
-      for (const pageId in pages) {
-        const page = pages[pageId];
-        const entry = titleMap.get(page.title);
-        if (entry && page.thumbnail && page.thumbnail.source) {
-          entry.imgUrl = page.thumbnail.source;
+    let subcats = [];
+    try {
+      subcats = await fetchCategoryMembers(current, 'subcat', 60);
+    } catch (_) {}
+
+    if (!subcats.length) return current;
+    current = sample(subcats).title;
+  }
+
+  return current;
+}
+
+async function fetchFileInfo(fileTitles) {
+  if (!fileTitles.length) return [];
+
+  const chunks = [];
+  for (let i = 0; i < fileTitles.length; i += 20) {
+    chunks.push(fileTitles.slice(i, i + 20));
+  }
+
+  const all = [];
+  for (const chunk of chunks) {
+    const data = await apiFetch({
+      prop: 'imageinfo|categories',
+      titles: chunk.join('|'),
+      iiprop: 'url|extmetadata|size|mime',
+      iiurlwidth: '1600',
+      cllimit: '20'
+    });
+
+    const pages = data?.query?.pages || {};
+    for (const pageId in pages) {
+      all.push(pages[pageId]);
+    }
+  }
+
+  return all;
+}
+
+function categoryText(page) {
+  return (page.categories || [])
+    .map(c => (c.title || '').replace(/^Category:/i, ''))
+    .join(' | ')
+    .toLowerCase();
+}
+
+function looksLikeBadImage(page) {
+  const ii = page.imageinfo?.[0];
+  if (!ii) return true;
+
+  const title = (page.title || '').toLowerCase();
+  const mime = (ii.mime || '').toLowerCase();
+  const cats = categoryText(page);
+  const desc = (
+    stripHtml(ii.extmetadata?.ImageDescription?.value || '') + ' ' +
+    stripHtml(ii.extmetadata?.ObjectName?.value || '')
+  ).toLowerCase();
+
+  if (!mime.startsWith('image/')) return true;
+  if (mime.includes('svg')) return true;
+  if ((ii.width || 0) < 900 || (ii.height || 0) < 600) return true;
+
+  const badWords = [
+    'logo', 'flag', 'map', 'locator', 'route map', 'diagram', 'chart', 'symbol',
+    'seal', 'crest', 'coat of arms', 'icon', 'poster', 'stamp', 'banknote',
+    'drawing', 'painting', 'illustration', 'etching', 'engraving', 'sketch',
+    'portrait', 'passport', 'document', 'signature', 'currency', 'emblem'
+  ];
+
+  for (const word of badWords) {
+    if (title.includes(word) || cats.includes(word) || desc.includes(word)) {
+      return true;
+    }
+  }
+
+  const goodWords = [
+    'cityscape', 'street', 'streetscape', 'village', 'town', 'harbour', 'harbor',
+    'port', 'lake', 'river', 'mountain', 'beach', 'forest', 'skyline',
+    'panorama', 'landscape', 'old town', 'alley', 'coast', 'canal'
+  ];
+
+  for (const word of goodWords) {
+    if (title.includes(word) || cats.includes(word) || desc.includes(word)) {
+      return false;
+    }
+  }
+
+  if (mime === 'image/jpeg' && (ii.width || 0) >= 1400) return false;
+
+  return true;
+}
+
+function extractPlace(page) {
+  const cats = (page.categories || []).map(c => c.title.replace(/^Category:/i, ''));
+  const preferred = cats.find(c =>
+    / in | of | by country| cityscapes| villages| harbours| harbors| ports| mountains| lakes| rivers| beaches/i.test(c)
+  );
+  return preferred || '';
+}
+
+function extractTheme(page) {
+  const text = categoryText(page);
+  if (text.includes('cityscape')) return '街並み';
+  if (text.includes('street')) return '通り';
+  if (text.includes('village')) return '村';
+  if (text.includes('harbour') || text.includes('harbor') || text.includes('port')) return '港';
+  if (text.includes('mountain')) return '山の風景';
+  if (text.includes('lake')) return '湖';
+  if (text.includes('river')) return '川辺';
+  if (text.includes('beach')) return '海辺';
+  if (text.includes('forest')) return '森';
+  if (text.includes('landscape')) return '風景';
+  return '世界の風景';
+}
+
+function pageToPhotoItem(page) {
+  const ii = page.imageinfo?.[0];
+  if (!ii?.thumburl) return null;
+
+  const titleClean = cleanFileTitle(page.title);
+  const rawDesc =
+    stripHtml(ii.extmetadata?.ObjectName?.value || '') ||
+    stripHtml(ii.extmetadata?.ImageDescription?.value || '');
+
+  const place = extractPlace(page);
+  const theme = extractTheme(page);
+
+  const captionParts = [];
+  if (place) captionParts.push(shortenText(place.replace(/\s*\([^)]*\)\s*/g, ''), 70));
+  if (theme) captionParts.push(theme);
+  if (rawDesc) captionParts.push(shortenText(rawDesc, 80));
+  else if (titleClean) captionParts.push(shortenText(titleClean, 80));
+
+  return {
+    id: page.title,
+    imgUrl: ii.thumburl,
+    fullUrl: ii.descriptionurl || '',
+    titleClean,
+    caption: captionParts.join(' / '),
+    place: shortenText(place.replace(/\s*\([^)]*\)\s*/g, ''), 70),
+    theme
+  };
+}
+
+async function loadCategoryBatch(seedCategory) {
+  const chosenCategory = await pickCategoryWithFiles(seedCategory);
+  const fileMembers = await fetchCategoryMembers(chosenCategory, 'file', 30);
+
+  if (!fileMembers.length) return [];
+
+  shuffle(fileMembers);
+  const picked = fileMembers.slice(0, 18).map(f => f.title);
+  const pages = await fetchFileInfo(picked);
+
+  return pages
+    .filter(page => !looksLikeBadImage(page))
+    .map(pageToPhotoItem)
+    .filter(Boolean);
+}
+
+async function fillImagePool(targetCount = 60) {
+  if (isFillingPool) return;
+  if (loadedPhotos.length >= targetCount) return;
+
+  isFillingPool = true;
+  try {
+    const seen = new Set(loadedPhotos.map(p => p.id));
+    let safety = 0;
+
+    while (loadedPhotos.length < targetCount && safety < 14) {
+      safety++;
+      const seed = sample(SEED_CATEGORIES);
+      let items = [];
+
+      try {
+        items = await loadCategoryBatch(seed);
+      } catch (e) {
+        console.warn('Category batch failed:', seed, e);
+      }
+
+      for (const item of items) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          loadedPhotos.push(item);
         }
       }
-    } catch (e) {
-      console.warn('Wiki API failed:', e);
     }
+  } finally {
+    isFillingPool = false;
   }
 }
 
 async function initApp() {
-  els.startBtn.textContent = '収集完了...';
+  els.startBtn.textContent = '収集中...';
   els.startOverlay.style.cursor = 'default';
   els.startOverlay.onclick = null;
 
-  await fetchWikiImages(locations);
-  loadedPhotos = locations.filter(e => e.imgUrl);
+  await fillImagePool(70);
   shuffle(loadedPhotos);
 
   els.startOverlay.style.display = 'none';
 
-  if (loadedPhotos.length === 0) {
+  if (!loadedPhotos.length) {
     els.locationName.textContent = '画像を取得できませんでした';
     els.photoCount.textContent = '0 / 0';
     return;
@@ -403,6 +627,8 @@ async function initApp() {
   showCurrentPhoto();
   preloadNext();
   startTicker();
+
+  fillImagePool(120);
 }
 
 function showCurrentPhoto() {
@@ -410,8 +636,12 @@ function showCurrentPhoto() {
   if (!loc) return;
 
   setPhotoBackground(loc.imgUrl);
-  els.locationName.textContent = formatCaption(loc);
-  els.photoCount.textContent = `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`;
+  els.locationName.textContent = buildCaption(loc);
+  updatePhotoCounter();
+
+  if (loadedPhotos.length - currentIndex < 20) {
+    fillImagePool(loadedPhotos.length + 50);
+  }
 }
 
 function preloadNext() {
@@ -421,14 +651,15 @@ function preloadNext() {
   }
 
   const nextLoc = loadedPhotos[(currentIndex + 1) % loadedPhotos.length];
+  if (!nextLoc) {
+    nextReady = false;
+    return;
+  }
+
   nextReady = false;
   nextImage = new Image();
-  nextImage.onload = () => {
-    nextReady = true;
-  };
-  nextImage.onerror = () => {
-    nextReady = false;
-  };
+  nextImage.onload = () => { nextReady = true; };
+  nextImage.onerror = () => { nextReady = false; };
   nextImage.src = nextLoc.imgUrl;
 }
 
@@ -476,142 +707,4 @@ function attemptAutoNext() {
   if (!loadedPhotos.length) return;
 
   if (nextReady) {
-    currentIndex = (currentIndex + 1) % loadedPhotos.length;
-    showCurrentPhoto();
-    preloadNext();
-    setProgress(0);
-  } else {
-    setProgress(100);
-  }
-}
-
-function manualNext() {
-  if (currentMode === 'news') {
-    newsIndex++;
-    showNewsItem();
-    setProgress(0);
-    return;
-  }
-
-  if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex + 1);
-}
-
-function manualPrev() {
-  if (currentMode === 'news') {
-    newsIndex = (newsIndex - 1 + cachedNews.length) % Math.max(cachedNews.length, 1);
-    showNewsItem();
-    setProgress(0);
-    return;
-  }
-
-  if (!loadedPhotos.length) return;
-  showPhotoAt(currentIndex - 1);
-}
-
-async function loadNews() {
-  if (newsLoaded && cachedNews.length) {
-    showNewsItem();
-    return;
-  }
-
-  try {
-    const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml");
-    const data = await res.json();
-    cachedNews = Array.isArray(data.items) ? data.items : [];
-    newsLoaded = true;
-    showNewsItem();
-  } catch (e) {
-    els.newsContent.innerHTML = "<h1 class='news-title'>News load failed.</h1>";
-  }
-}
-
-function showNewsItem() {
-  if (!cachedNews.length) {
-    els.newsContent.innerHTML = "<h1 class='news-title'>No news available.</h1>";
-    els.locationName.textContent = "世界ニュース速報 (BBC)";
-    return;
-  }
-
-  const item = cachedNews[((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length];
-  const title = item.title || '';
-  const desc = stripHtml(item.description || '').trim();
-  const shortDesc = desc.length > 300 ? desc.substring(0, 300) + '...' : desc;
-
-  els.newsContent.innerHTML = '';
-
-  const titleEl = document.createElement('h1');
-  titleEl.className = 'news-title';
-  titleEl.textContent = title;
-
-  const descEl = document.createElement('p');
-  descEl.className = 'news-desc';
-  descEl.textContent = shortDesc;
-
-  const linkEl = document.createElement('a');
-  linkEl.className = 'news-link';
-  linkEl.target = '_blank';
-  linkEl.rel = 'noopener noreferrer';
-  linkEl.href = item.link || '#';
-  linkEl.textContent = '記事を詳しく読む →';
-
-  els.newsContent.appendChild(titleEl);
-  els.newsContent.appendChild(descEl);
-  if (item.link) {
-    els.newsContent.appendChild(linkEl);
-  }
-
-  els.locationName.textContent = "世界ニュース速報 (BBC)";
-  els.photoCount.textContent = `${((newsIndex % cachedNews.length) + cachedNews.length) % cachedNews.length + 1} / ${cachedNews.length}`;
-}
-
-function switchMode(mode) {
-  currentMode = mode;
-
-  els.tabPhoto.classList.toggle('active', mode === 'photo');
-  els.tabNews.classList.toggle('active', mode === 'news');
-  els.newsContainer.style.display = mode === 'news' ? 'flex' : 'none';
-
-  if (mode === 'news') {
-    setPhotoBackground('');
-    loadNews();
-  } else {
-    showCurrentPhoto();
-    els.photoCount.textContent = loadedPhotos.length
-      ? `${(currentIndex % loadedPhotos.length) + 1} / ${loadedPhotos.length}`
-      : '0 / 0';
-  }
-
-  setProgress(0);
-}
-
-function togglePause() {
-  isPaused = !isPaused;
-  updatePauseIcon();
-}
-
-function updatePauseIcon() {
-  els.pauseBtn.innerHTML = isPaused ? '&#9654;' : '&#10074;&#10074;';
-}
-
-function startTicker() {
-  if (tickerId !== null) return;
-
-  tickerId = setInterval(() => {
-    if (isPaused) return;
-
-    const duration = currentMode === 'photo' ? 45 : 25;
-
-    if (progress >= 100) {
-      if (currentMode === 'news' || nextReady) {
-        attemptAutoNext();
-      }
-      return;
-    }
-
-    setProgress(progress + (10 / duration));
-  }, 100);
-}
-</script>
-</body>
-</html>
+    currentIndex = (current
